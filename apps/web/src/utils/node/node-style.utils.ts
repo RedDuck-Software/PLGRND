@@ -28,6 +28,10 @@ export const nodeStyles: Record<NodeType, NodeStyle> = {
   [NodeTypeEnum.SIGN]: { color: '#265c75', width: 150 },
   [NodeTypeEnum.VERIFY_SIGNATURE]: { color: '#265c75', width: 150 },
   [NodeTypeEnum.PRIVATE_KEY]: { color: '#265c75', width: 300 },
+  [NodeTypeEnum.BASE58]: { color: '#265c75', width: 200 },
+  [NodeTypeEnum.BASE64]: { color: '#265c75', width: 200 },
+
+  [NodeTypeEnum.TOKEN_BALANCE]: { color: '#75511e', width: 200 },
 }
 
 export const getNodeStyles = (nodeType?: NodeType) => {

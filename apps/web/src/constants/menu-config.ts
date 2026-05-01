@@ -24,7 +24,7 @@ export const menuConfig: MenuCategory[] = [
     id: 'network',
     label: 'Network',
     color: '#75511e',
-    nodes: [NodeTypeEnum.NETWORK, NodeTypeEnum.BALANCE],
+    nodes: [NodeTypeEnum.NETWORK, NodeTypeEnum.BALANCE, NodeTypeEnum.TOKEN_BALANCE],
   },
   {
     id: 'programs',
@@ -42,6 +42,8 @@ export const menuConfig: MenuCategory[] = [
       NodeTypeEnum.VERIFY_SIGNATURE,
       NodeTypeEnum.KEYPAIR,
       NodeTypeEnum.PRIVATE_KEY,
+      NodeTypeEnum.BASE58,
+      NodeTypeEnum.BASE64,
     ],
   },
 ]

@@ -17,6 +17,9 @@ import { instructionsNodeConfig } from './data/instructions-node-data'
 import { transactionNodeConfig } from './data/transaction-node-data'
 import { idlNodeConfig } from './data/idl-node-data'
 import { programInstructionsNodeConfig } from './data/program-instructions-node-data'
+import { tokenBalanceNodeConfig } from './data/token-balance-node-data'
+import { base58NodeConfig } from './data/base58-node-data'
+import { base64NodeConfig } from './data/base64-node-data'
 
 export const nodeConfigRegistry = {
   [NodeTypeEnum.TEXT]: textNodeConfig,
@@ -36,6 +39,9 @@ export const nodeConfigRegistry = {
   [NodeTypeEnum.TRANSACTION]: transactionNodeConfig,
   [NodeTypeEnum.IDL]: idlNodeConfig,
   [NodeTypeEnum.PROGRAM_INSTRUCTIONS]: programInstructionsNodeConfig,
+  [NodeTypeEnum.TOKEN_BALANCE]: tokenBalanceNodeConfig,
+  [NodeTypeEnum.BASE58]: base58NodeConfig,
+  [NodeTypeEnum.BASE64]: base64NodeConfig,
 } as const satisfies Record<NodeType, NodeConfig>
 
 export const getNodeConfig = (nodeType: NodeType) => {

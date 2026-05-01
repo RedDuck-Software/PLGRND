@@ -16,6 +16,9 @@ import { InstructionsNode } from '@/components/nodes/instructions-node'
 import { TransactionNode } from '../../components/nodes/transaction-node'
 import { IdlNode } from '@/components/nodes/idl-node'
 import { ProgramInstructionsNode } from '@/components/nodes/program-instructions-node'
+import { TokenBalanceNode } from '@/components/nodes/token-balance-node'
+import { Base58Node } from '@/components/nodes/base58-node'
+import { Base64Node } from '@/components/nodes/base64-node'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const nodeMap: Record<NodeType, React.ComponentType<any>> = {
@@ -36,4 +39,7 @@ export const nodeMap: Record<NodeType, React.ComponentType<any>> = {
   [NodeTypeEnum.TRANSACTION]: TransactionNode,
   [NodeTypeEnum.IDL]: IdlNode,
   [NodeTypeEnum.PROGRAM_INSTRUCTIONS]: ProgramInstructionsNode,
+  [NodeTypeEnum.TOKEN_BALANCE]: TokenBalanceNode,
+  [NodeTypeEnum.BASE58]: Base58Node,
+  [NodeTypeEnum.BASE64]: Base64Node,
 }

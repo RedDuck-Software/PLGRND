@@ -20,6 +20,9 @@ const NODE_TOOLTIP_LINKS: Partial<Record<NodeType, string>> = {
   TRANSACTION: 'https://solana.com/docs/core/transactions#sending-transactions',
   IDL: 'https://solana.com/docs/programs/anchor/idl',
   PROGRAM_INSTRUCTIONS: 'https://solana.com/docs/core/cpi',
+  TOKEN_BALANCE: 'https://spl.solana.com/token',
+  BASE58: 'https://en.wikipedia.org/wiki/Binary-to-text_encoding#Base58',
+  BASE64: 'https://en.wikipedia.org/wiki/Base64',
 }
 
 export const NODE_TOOLTIPS: Partial<Record<NodeType, React.ReactNode>> = {
@@ -165,6 +168,39 @@ export const NODE_TOOLTIPS: Partial<Record<NodeType, React.ReactNode>> = {
       <p>Interact with custom programs using their IDL.</p>
       <p>
         Once an IDL is connected, this node dynamically generates inputs for any instruction defined in that program.
+      </p>
+    </>
+  ),
+  TOKEN_BALANCE: (
+    <>
+      <p>
+        Fetch the balance of an <BoldText>SPL token</BoldText> for a given wallet and mint address.
+      </p>
+      <p>
+        Connect a wallet public key, a network, and the token's <BoldText>mint address</BoldText> to get the UI and raw
+        balance.
+      </p>
+    </>
+  ),
+  BASE58: (
+    <>
+      <p>
+        <BoldText>Base58</BoldText> encode or decode any string.
+      </p>
+      <p>
+        Solana uses base58 everywhere — public keys, private keys, transaction signatures. Use this node to convert
+        between raw bytes and their base58 representation.
+      </p>
+    </>
+  ),
+  BASE64: (
+    <>
+      <p>
+        <BoldText>Base64</BoldText> encode or decode any string.
+      </p>
+      <p>
+        Account data returned from the RPC is base64-encoded. Use this node to decode it into readable text or encode
+        data for storage.
       </p>
     </>
   ),
