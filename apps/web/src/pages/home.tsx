@@ -13,7 +13,11 @@ import {
   SelectionMode,
 } from '@xyflow/react'
 import { nodeMap } from '@/utils/node/node-map'
-import { NodeTypeEnum } from '@/types/node'
+import { NodeTypeEnum, type NodeType } from '@/types/node'
+import { AiPanel } from '@/components/ai-panel/ai-panel'
+import { buildFlowFromAiResponse } from '@/utils/ai/apply-flow'
+import { nodeStyles } from '@/utils/node/node-style.utils'
+import type { FlowResponse } from '@/utils/ai/tools'
 
 const initialNodes: Node[] = [
   { id: 'default1', position: { x: 0, y: 0 }, type: NodeTypeEnum.TEXT, data: { text: 'Welcome to SOL Learn!' } },
@@ -67,6 +71,26 @@ const areHandleTypesCompatible = (srcType?: string | null, tgtType?: string | nu
 export default function Home() {
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes)
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges)
+
+  const addFlowToCanvas = useCallback(
+    (flow: FlowResponse) => {
+      const offset = (() => {
+        if (nodes.length === 0) return { x: 200, y: 300 }
+        let maxX = 0
+        let totalY = 0
+        for (const n of nodes) {
+          const width = nodeStyles[n.type as NodeType]?.width ?? 200
+          maxX = Math.max(maxX, n.position.x + width)
+          totalY += n.position.y
+        }
+        return { x: maxX + 80, y: totalY / nodes.length }
+      })()
+      const { nodes: newNodes, edges: newEdges } = buildFlowFromAiResponse(flow, offset)
+      setNodes((prev) => [...prev, ...newNodes])
+      setEdges((prev) => [...prev, ...newEdges])
+    },
+    [nodes, setNodes, setEdges]
+  )
 
   const onConnect = useCallback(
     (params: Connection) => {
@@ -139,7 +163,8 @@ export default function Home() {
   }, [nodes, setNodes, setEdges])
 
   return (
-    <div style={{ width: '100vw', height: 'calc(100vh - 74px)' }}>
+    <div style={{ height: 'calc(100vh - 74px)' }} className="flex">
+      <div className="flex-1 relative">
       <ReactFlow
         colorMode="dark"
         nodes={nodes}
@@ -160,6 +185,8 @@ export default function Home() {
         <MiniMap />
         <Controls />
       </ReactFlow>
+      </div>
+      <AiPanel onApplyFlow={addFlowToCanvas} />
     </div>
   )
 }

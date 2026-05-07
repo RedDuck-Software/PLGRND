@@ -53,13 +53,19 @@ export const InstructionsNode = (props: NodeProps<InstructionsNodeType>) => {
       const ixs = [...base.instructions]
       const def = getInstructionById(selected)
       if (def) {
-        const inputs: Record<string, unknown> = {}
         const resolvedMap = resolved as unknown as Record<string, { value: unknown }>
+        const inputs: Record<string, unknown> = {}
         for (const f of def.fields) {
           inputs[f.key] = resolvedMap[f.key]?.value
         }
-        const built = await def.build(base, inputs)
-        ixs.push(...built)
+        const allReady = def.fields.every((f) => {
+          const v = inputs[f.key]
+          return v !== undefined && v !== null && String(v).trim() !== ''
+        })
+        if (allReady) {
+          const built = await def.build(base, inputs)
+          ixs.push(...built)
+        }
       }
       const out = new Transaction()
       if (ixs.length > 0) out.add(...ixs)

@@ -17,3 +17,5 @@ node_modules
 .pnp.*
 .DS_Store
 **/.DS_Store
+.env.local
+.env*.local
