@@ -264,6 +264,7 @@ export const NODE_TOOLTIPS: Partial<Record<NodeType, React.ReactNode>> = {
         You can double click an <BoldText>output handle</BoldText> to add a <BoldText>display node</BoldText>.
       </p>
       <p>Click on text to copy it to the clipboard.</p>
+      <p>Objects, bytes, and transactions are formatted into readable JSON.</p>
     </>
   ),
 }
