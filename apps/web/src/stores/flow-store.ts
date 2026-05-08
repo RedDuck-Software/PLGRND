@@ -9,7 +9,6 @@ import {
   type EdgeChange,
   type Viewport,
 } from '@xyflow/react'
-import { NodeTypeEnum } from '@/types/node'
 
 export const FLOW_STORAGE_KEY = 'sol-learn:flow'
 export const FLOW_STORAGE_VERSION = 3
@@ -62,15 +61,7 @@ export const sanitizeNodes = (nodes: Node[]): Node[] =>
     data: (sanitizeForPersist(node.data) as Node['data']) ?? {},
   }))
 
-const defaultNodes: Node[] = [
-  { id: 'default1', position: { x: 0, y: 0 }, type: NodeTypeEnum.TEXT, data: { text: 'Welcome to SOL Learn!' } },
-  {
-    id: 'default2',
-    position: { x: 0, y: 70 },
-    type: NodeTypeEnum.TEXT,
-    data: { text: "I hope we've made your Solana learning journey much easier!" },
-  },
-]
+const defaultNodes: Node[] = []
 const defaultEdges: Edge[] = []
 
 export interface FlowSnapshot {

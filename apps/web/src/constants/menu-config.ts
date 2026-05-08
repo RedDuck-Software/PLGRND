@@ -11,13 +11,13 @@ export const menuConfig: MenuCategory[] = [
   {
     id: 'input',
     label: 'Input',
-    color: '#531d2b',
+    color: '#3B82F6',
     nodes: [NodeTypeEnum.DISPLAY, NodeTypeEnum.TEXT, NodeTypeEnum.NUMBER],
   },
   {
     id: 'math',
     label: 'Math',
-    color: '#3d4f91',
+    color: '#5B9BFF',
     nodes: [
       NodeTypeEnum.ADD,
       NodeTypeEnum.SUBTRACT,
@@ -32,8 +32,8 @@ export const menuConfig: MenuCategory[] = [
   },
   {
     id: 'logic',
-    label: 'Logic',
-    color: '#8a641f',
+    label: 'Control',
+    color: '#FFB849',
     nodes: [
       NodeTypeEnum.BOOLEAN,
       NodeTypeEnum.AND,
@@ -48,7 +48,7 @@ export const menuConfig: MenuCategory[] = [
   {
     id: 'utils',
     label: 'Utils',
-    color: '#2f6f6a',
+    color: '#B6B6CC',
     nodes: [
       NodeTypeEnum.SOL_TO_LAMPORTS,
       NodeTypeEnum.LAMPORTS_TO_SOL,
@@ -64,19 +64,19 @@ export const menuConfig: MenuCategory[] = [
   {
     id: 'transactions',
     label: 'Transactions',
-    color: '#2a5f2b',
+    color: '#9945FF',
     nodes: [NodeTypeEnum.TRANSACTION_BUILDER, NodeTypeEnum.TRANSACTION, NodeTypeEnum.TRANSACTION_VIEW],
   },
   {
     id: 'network',
     label: 'Network',
-    color: '#75511e',
+    color: '#00C2A0',
     nodes: [NodeTypeEnum.NETWORK, NodeTypeEnum.BALANCE],
   },
   {
     id: 'programs',
     label: 'Programs',
-    color: '#5a1d5f',
+    color: '#A78BFA',
     nodes: [
       NodeTypeEnum.IDL,
       NodeTypeEnum.PROGRAM_INSTRUCTIONS,
@@ -88,13 +88,13 @@ export const menuConfig: MenuCategory[] = [
   {
     id: 'wallet',
     label: 'Wallet',
-    color: '#1f3d6b',
+    color: '#3DD7E5',
     nodes: [NodeTypeEnum.WALLET],
   },
   {
     id: 'crypto',
     label: 'Crypto',
-    color: '#265c75',
+    color: '#14F195',
     nodes: [
       NodeTypeEnum.HASH,
       NodeTypeEnum.SIGN,
@@ -106,7 +106,7 @@ export const menuConfig: MenuCategory[] = [
   {
     id: 'string',
     label: 'String',
-    color: '#7a3f24',
+    color: '#FF8A4C',
     nodes: [
       NodeTypeEnum.STRING_COMBINE,
       NodeTypeEnum.STRING_LENGTH,

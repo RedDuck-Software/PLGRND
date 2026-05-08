@@ -3,8 +3,9 @@ import type { XYPosition } from '@xyflow/react'
 import { useRef, useState, type RefObject } from 'react'
 import { useDraggable } from '@neodrag/react'
 import { cn } from '@/lib/utils'
-import { getNodeStyles } from '@/utils/node/node-style.utils'
 import { getNodeConfig } from '@/utils/node/node-config-registry'
+import { getNodeStyles } from '@/utils/node/node-style.utils'
+import { DynamicIcon, type IconName } from 'lucide-react/dynamic'
 
 export interface DraggableNodeProps {
   type: NodeType
@@ -12,40 +13,49 @@ export interface DraggableNodeProps {
   onDragStart?: () => void
   onDragEnd?: () => void
   className?: string
+  categoryColor?: string
 }
 
-export const DraggableNode = ({ type, onDrop, onDragStart, onDragEnd, className }: DraggableNodeProps) => {
+const toTitleCase = (str: string) =>
+  str
+    .toLowerCase()
+    .split('_')
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(' ')
+
+export const DraggableNode = ({
+  type,
+  onDrop,
+  onDragStart,
+  onDragEnd,
+  className,
+  categoryColor,
+}: DraggableNodeProps) => {
   const draggableRef = useRef<HTMLDivElement>(null)
   const [position, setPosition] = useState<XYPosition>({ x: 0, y: 0 })
   const [isDragging, setIsDragging] = useState(false)
 
   useDraggable(draggableRef as RefObject<HTMLElement>, {
-    position: position,
+    position,
     onDragStart: () => {
       setIsDragging(true)
       onDragStart?.()
     },
     onDrag: ({ offsetX, offsetY }) => {
-      // Calculate position relative to the viewport
-      setPosition({
-        x: offsetX,
-        y: offsetY,
-      })
+      setPosition({ x: offsetX, y: offsetY })
     },
     onDragEnd: ({ event }) => {
       setIsDragging(false)
       setPosition({ x: 0, y: 0 })
-      onDrop(type, {
-        x: event.clientX,
-        y: event.clientY,
-      })
+      onDrop(type, { x: event.clientX, y: event.clientY })
       onDragEnd?.()
     },
   })
 
   const nodeConfig = getNodeConfig(type as NodeType)
-
-  const nodeStyles = getNodeStyles(type)
+  const nodeStyles = getNodeStyles(type as NodeType)
+  const color = categoryColor ?? nodeStyles.color
+  const title = toTitleCase(nodeConfig.label)
 
   const handleClick = () => {
     const centerX = window.innerWidth / 2
@@ -54,25 +64,53 @@ export const DraggableNode = ({ type, onDrop, onDragStart, onDragEnd, className 
   }
 
   return (
-    <>
+    <div
+      ref={draggableRef}
+      onClick={handleClick}
+      className={cn('dndnode pointer-events-auto', isDragging && 'fixed', className)}
+      style={{ zIndex: isDragging ? 99999 : undefined }}
+    >
       <div
-        ref={draggableRef}
-        onClick={handleClick}
-        className={cn('dndnode pointer-events-auto', isDragging && 'fixed', className)}
-        style={{ zIndex: isDragging ? 99999 : undefined }}
+        className={cn(
+          'flex items-center gap-2.5 rounded-md px-2 py-1.5 my-0.5',
+          'cursor-grab active:cursor-grabbing select-none',
+          'hover:bg-[#13131D] transition-colors group',
+          isDragging && 'pointer-events-none'
+        )}
+        style={
+          isDragging
+            ? {
+                background: '#13131D',
+                border: `1px solid ${color}66`,
+                boxShadow: `0 12px 32px ${color}33, 0 0 0 1px ${color}22`,
+              }
+            : undefined
+        }
       >
-        <div className="relative border-border md:w-[180px] border rounded-t-[6px]">
-          <div className="cursor-grab active:cursor-grabbing relative z-30 group inline-flex h-9 w-full items-center justify-center rounded-md bg-background px-4 py-2 text-sm font-medium transition-colors hover:bg-border">
-            <p className="text-sm font-medium text-foreground capitalize text-center">
-              {nodeConfig.label.toLowerCase()}
-            </p>
-          </div>
-          <div
-            className="absolute -bottom-1 z-20 left-0 right-0 h-3 rounded-b-[6px]"
-            style={{ backgroundColor: nodeStyles.color }}
+        {/* Icon box */}
+        <div
+          className="flex h-5 w-5 shrink-0 items-center justify-center rounded-[4px] transition-all group-hover:scale-110"
+          style={{
+            backgroundColor: isDragging ? color : `${color}1F`,
+          }}
+        >
+          <DynamicIcon
+            name={nodeStyles.icon as IconName}
+            size={11}
+            color={isDragging ? '#08080F' : color}
+            strokeWidth={2.4}
           />
         </div>
+        {/* Label */}
+        <span
+          className={cn(
+            'flex-1 truncate text-[12px] transition-colors',
+            isDragging ? 'text-foreground font-medium' : 'text-[#C8C8DC] group-hover:text-foreground'
+          )}
+        >
+          {title}
+        </span>
       </div>
-    </>
+    </div>
   )
 }
