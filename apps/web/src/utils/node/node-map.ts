@@ -31,6 +31,7 @@ import { IdlNode } from '@/components/nodes/programs/idl-node'
 import { ProgramInstructionsNode } from '@/components/nodes/programs/program-instructions-node'
 import { ProgramAccountNode } from '@/components/nodes/programs/program-account-node'
 import { WalletNode } from '@/components/nodes/wallet/wallet-node'
+import { CommentNode } from '@/components/nodes/input/comment-node'
 import { StringCombineNode } from '@/components/nodes/string/string-combine-node'
 import { StringLengthNode } from '@/components/nodes/string/string-length-node'
 import { StringSubstringNode } from '@/components/nodes/string/string-substring-node'
@@ -85,6 +86,7 @@ export const nodeMap: Record<NodeType, React.ComponentType<any>> = {
   [NodeTypeEnum.PROGRAM_INSTRUCTIONS]: ProgramInstructionsNode,
   [NodeTypeEnum.PROGRAM_ACCOUNT]: ProgramAccountNode,
   [NodeTypeEnum.WALLET]: WalletNode,
+  [NodeTypeEnum.COMMENT]: CommentNode,
   [NodeTypeEnum.STRING_COMBINE]: StringCombineNode,
   [NodeTypeEnum.STRING_LENGTH]: StringLengthNode,
   [NodeTypeEnum.STRING_SUBSTRING]: StringSubstringNode,

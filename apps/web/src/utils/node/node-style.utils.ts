@@ -52,6 +52,8 @@ export const nodeStyles: Record<NodeType, NodeStyle> = {
   [NodeTypeEnum.PROGRAM_ACCOUNT]: { color: '#5a1d5f', width: 350 },
 
   [NodeTypeEnum.WALLET]: { color: '#1f3d6b', width: 200 },
+
+  [NodeTypeEnum.COMMENT]: { color: '#531d2b', width: 280 },
   [NodeTypeEnum.INSTRUCTIONS]: { color: '#5a1d5f', width: 300 },
   [NodeTypeEnum.PDA]: { color: '#5a1d5f', width: 140 },
 

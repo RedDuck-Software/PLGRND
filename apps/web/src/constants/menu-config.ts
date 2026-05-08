@@ -12,7 +12,7 @@ export const menuConfig: MenuCategory[] = [
     id: 'input',
     label: 'Input',
     color: '#531d2b',
-    nodes: [NodeTypeEnum.DISPLAY, NodeTypeEnum.TEXT, NodeTypeEnum.NUMBER],
+    nodes: [NodeTypeEnum.DISPLAY, NodeTypeEnum.TEXT, NodeTypeEnum.NUMBER, NodeTypeEnum.COMMENT],
   },
   {
     id: 'math',
