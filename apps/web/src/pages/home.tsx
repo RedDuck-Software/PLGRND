@@ -128,6 +128,10 @@ export default function Home() {
     for (const el of all) el.classList.remove('handle--dim', 'handle--highlight')
   }, [])
 
+  const onPaneClick = useCallback(() => {
+    window.dispatchEvent(new Event('flow-pane-click'))
+  }, [])
+
   const onViewportChange = useCallback((vp: Viewport) => setViewport(vp), [setViewport])
 
   useEffect(() => {
@@ -159,6 +163,7 @@ export default function Home() {
         onConnect={onConnect}
         onConnectStart={onConnectStart}
         onConnectEnd={onConnectEnd}
+        onPaneClick={onPaneClick}
         onViewportChange={onViewportChange}
         isValidConnection={isValidConnection}
         defaultViewport={viewport}

@@ -45,6 +45,7 @@ import { idlNodeConfig } from './data/programs/idl-node-data'
 import { programInstructionsNodeConfig } from './data/programs/program-instructions-node-data'
 import { programAccountNodeConfig } from './data/programs/program-account-node-data'
 import { walletNodeConfig } from './data/wallet/wallet-node-data'
+import { commentNodeConfig } from './data/input/comment-node-data'
 import { stringCombineNodeConfig } from './data/string/string-combine-node-data'
 import { stringLengthNodeConfig } from './data/string/string-length-node-data'
 import { stringSubstringNodeConfig } from './data/string/string-substring-node-data'
@@ -98,6 +99,7 @@ export const nodeConfigRegistry = {
   [NodeTypeEnum.PROGRAM_INSTRUCTIONS]: programInstructionsNodeConfig,
   [NodeTypeEnum.PROGRAM_ACCOUNT]: programAccountNodeConfig,
   [NodeTypeEnum.WALLET]: walletNodeConfig,
+  [NodeTypeEnum.COMMENT]: commentNodeConfig,
   [NodeTypeEnum.STRING_COMBINE]: stringCombineNodeConfig,
   [NodeTypeEnum.STRING_LENGTH]: stringLengthNodeConfig,
   [NodeTypeEnum.STRING_SUBSTRING]: stringSubstringNodeConfig,

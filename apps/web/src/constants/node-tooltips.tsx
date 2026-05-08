@@ -254,6 +254,55 @@ export const NODE_TOOLTIPS: Partial<Record<NodeType, React.ReactNode>> = {
       </p>
     </>
   ),
+  COMMENT: (
+    <>
+      <p>
+        A free-form note for annotating your flow. It has no inputs or outputs and does not affect execution.
+      </p>
+      <p>Use it to leave context for yourself or anyone you share the flow with.</p>
+    </>
+  ),
+  STRING_COMBINE: (
+    <>
+      <p>
+        Concatenate two or more strings into one. The order matches the order of inputs.
+      </p>
+    </>
+  ),
+  STRING_LENGTH: (
+    <>
+      <p>Returns the number of characters in the input string.</p>
+    </>
+  ),
+  STRING_SUBSTRING: (
+    <>
+      <p>
+        Extract a portion of a string between a <BoldText>start</BoldText> and <BoldText>end</BoldText> index (zero-based).
+      </p>
+    </>
+  ),
+  STRING_SPLIT: (
+    <>
+      <p>
+        Break a string into pieces around a separator (e.g. <HighlightedText>,</HighlightedText> or{' '}
+        <HighlightedText> </HighlightedText>) and pick one of the resulting parts by index.
+      </p>
+    </>
+  ),
+  STRING_SEARCH: (
+    <>
+      <p>Find the position of a substring inside a string.</p>
+      <p>Returns the zero-based index of the first match, or -1 if not found.</p>
+    </>
+  ),
+  STRING_REPLACE: (
+    <>
+      <p>
+        Replace occurrences of a <BoldText>search</BoldText> substring with a <BoldText>replacement</BoldText> in the
+        input string.
+      </p>
+    </>
+  ),
   TEXT: <div>Type anything you want!</div>,
   DISPLAY: (
     <>
