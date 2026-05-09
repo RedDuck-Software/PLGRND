@@ -1,4 +1,4 @@
-import { Sparkles, MousePointerClick, Library } from 'lucide-react'
+import { MousePointerClick, Library } from 'lucide-react'
 
 interface Props {
   onBrowseBricks: () => void
@@ -54,10 +54,7 @@ export function EmptyState({ onBrowseBricks }: Props) {
               boxShadow: '0 8px 24px rgba(153,69,255,0.35)',
             }}
           >
-            <Sparkles
-              className="h-7 w-7 text-white"
-              style={{ animation: 'sparkleSpin 6s linear infinite' }}
-            />
+            <Library className="h-7 w-7 text-white" />
           </div>
         </div>
         <div>
@@ -65,26 +62,19 @@ export function EmptyState({ onBrowseBricks }: Props) {
             Start building your flow
           </h2>
           <p className="mt-2 text-[12px] text-[#8B8B9E] leading-relaxed">
-            Drag a block from the library, or describe what you want to build and the AI
-            Copilot will scaffold it for you.
+            Drag a block from the library onto the canvas, then connect blocks to build
+            your Solana flow.
           </p>
         </div>
         <div className="flex items-center gap-2 w-full">
           <button
             type="button"
             onClick={onBrowseBricks}
-            className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-[#1F1F2E] bg-[#13131D] px-3 py-2 text-[12px] font-medium text-foreground hover:bg-[#1F1F2E] transition-colors"
-          >
-            <Library className="h-3.5 w-3.5" />
-            Browse Blocks
-          </button>
-          <button
-            type="button"
             className="flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-[#9945FF] px-3 py-2 text-[12px] font-semibold text-white hover:bg-[#8438EE] transition-colors"
             style={{ boxShadow: '0 4px 12px rgba(153,69,255,0.4)' }}
           >
-            <Sparkles className="h-3.5 w-3.5" />
-            Ask AI Copilot
+            <Library className="h-3.5 w-3.5" />
+            Browse Blocks
           </button>
         </div>
         <div className="flex items-center gap-1.5 text-[10px] text-[#6E6E80]">

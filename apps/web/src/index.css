@@ -476,11 +476,6 @@ body {
   }
 }
 
-@keyframes sparkleSpin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
-
 /* ────────────────── ReactFlow MiniMap ────────────────── */
 .flow-minimap {
   margin: 12px !important;

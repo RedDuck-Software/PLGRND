@@ -9,9 +9,11 @@ import {
   type EdgeChange,
   type Viewport,
 } from '@xyflow/react'
+import type { FlowVariable, FlowVariableType } from '@/types/flow-variable'
+import { normalizeVariableName } from '@/utils/flow/variables'
 
 export const FLOW_STORAGE_KEY = 'sol-learn:flow'
-export const FLOW_STORAGE_VERSION = 3
+export const FLOW_STORAGE_VERSION = 4
 
 const isPlainObject = (value: unknown): value is Record<string, unknown> => {
   if (value === null || typeof value !== 'object') return false
@@ -61,41 +63,275 @@ export const sanitizeNodes = (nodes: Node[]): Node[] =>
     data: (sanitizeForPersist(node.data) as Node['data']) ?? {},
   }))
 
+export const sanitizeVariables = (variables: unknown): FlowVariable[] => {
+  if (!Array.isArray(variables)) return []
+
+  return variables
+    .map((variable) => {
+      if (!isPlainObject(variable)) return null
+      const name = normalizeVariableName(String(variable.name ?? ''))
+      if (!name) return null
+      const type = String(variable.type ?? 'string') as FlowVariableType
+      const safeType: FlowVariableType = ['string', 'number', 'boolean', 'publicKey'].includes(type)
+        ? type
+        : 'string'
+      return {
+        id: String(variable.id ?? crypto.randomUUID()),
+        name,
+        type: safeType,
+        value: String(variable.value ?? ''),
+      }
+    })
+    .filter((variable): variable is FlowVariable => Boolean(variable))
+}
+
 const defaultNodes: Node[] = []
 const defaultEdges: Edge[] = []
+const defaultVariables: FlowVariable[] = []
+const HISTORY_LIMIT = 50
+
+let historyBatchQueued = false
+
+const queueHistoryBatchReset = () => {
+  if (historyBatchQueued) return
+  historyBatchQueued = true
+  queueMicrotask(() => {
+    historyBatchQueued = false
+  })
+}
 
 export interface FlowSnapshot {
   nodes: Node[]
   edges: Edge[]
+  variables?: FlowVariable[]
   viewport?: Viewport
 }
 
+interface FlowHistorySnapshot {
+  nodes: Node[]
+  edges: Edge[]
+}
+
 interface FlowState extends FlowSnapshot {
+  variables: FlowVariable[]
+  past: FlowHistorySnapshot[]
+  future: FlowHistorySnapshot[]
+  positionHistoryInProgress: boolean
   onNodesChange: (changes: NodeChange[]) => void
   onEdgesChange: (changes: EdgeChange[]) => void
   setNodes: (updater: Node[] | ((nodes: Node[]) => Node[])) => void
   setEdges: (updater: Edge[] | ((edges: Edge[]) => Edge[])) => void
   setViewport: (viewport: Viewport) => void
-  replaceFlow: (snapshot: FlowSnapshot) => void
+  replaceFlow: (snapshot: FlowSnapshot, options?: { recordHistory?: boolean }) => void
   resetFlow: () => void
+  undo: () => void
+  redo: () => void
+  addVariable: () => void
+  updateVariable: (id: string, patch: Partial<Omit<FlowVariable, 'id'>>) => void
+  deleteVariable: (id: string) => void
 }
+
+const createVariableId = () => crypto.randomUUID()
+
+const getNextVariableName = (variables: FlowVariable[]) => {
+  const names = new Set(variables.map((variable) => variable.name))
+  let index = variables.length + 1
+  let name = `VARIABLE_${index}`
+
+  while (names.has(name)) {
+    index += 1
+    name = `VARIABLE_${index}`
+  }
+
+  return name
+}
+
+const createHistorySnapshot = (state: FlowSnapshot): FlowHistorySnapshot => ({
+  nodes: state.nodes,
+  edges: state.edges,
+})
+
+const applyHistorySnapshot = (
+  snapshot: FlowHistorySnapshot,
+  current: FlowHistorySnapshot
+): FlowHistorySnapshot => {
+  const currentNodesById = new Map(current.nodes.map((node) => [node.id, node]))
+
+  return {
+    nodes: snapshot.nodes.map((node) => {
+      const currentNode = currentNodesById.get(node.id)
+      return currentNode ? { ...node, data: currentNode.data } : node
+    }),
+    edges: snapshot.edges,
+  }
+}
+
+const pushHistory = (state: FlowState) => {
+  if (historyBatchQueued) return {}
+  queueHistoryBatchReset()
+  return {
+    past: [...state.past, createHistorySnapshot(state)].slice(-HISTORY_LIMIT),
+    future: [],
+  }
+}
+
+const hasGraphChanged = (
+  state: FlowSnapshot,
+  snapshot: Pick<FlowSnapshot, 'nodes' | 'edges'>
+) => state.nodes !== snapshot.nodes || state.edges !== snapshot.edges
+
+const stripNodeData = (node: Node) => {
+  const nodeWithoutData = { ...node } as Partial<Node>
+  delete nodeWithoutData.data
+  return nodeWithoutData
+}
+
+const isDataOnlyNodeReplace = (change: NodeChange, nodes: Node[]) => {
+  if (change.type !== 'replace') return false
+  const previous = nodes.find((node) => node.id === change.id)
+  if (!previous) return false
+  return JSON.stringify(stripNodeData(previous)) === JSON.stringify(stripNodeData(change.item))
+}
+
+const shouldRecordNodeChanges = (changes: NodeChange[], state: FlowState) =>
+  changes.some((change) => {
+    if (change.type === 'select' || change.type === 'dimensions') return false
+    if (isDataOnlyNodeReplace(change, state.nodes)) return false
+    if (change.type === 'position') return !state.positionHistoryInProgress
+    return true
+  })
+
+const getPositionHistoryInProgress = (changes: NodeChange[], current: boolean) => {
+  if (!changes.some((change) => change.type === 'position')) return current
+  return changes.some((change) => change.type === 'position' && change.dragging)
+}
+
+const shouldRecordEdgeChanges = (changes: EdgeChange[]) =>
+  changes.some((change) => change.type !== 'select')
 
 export const useFlowStore = create<FlowState>()(
   persist(
     (set) => ({
       nodes: defaultNodes,
       edges: defaultEdges,
+      variables: defaultVariables,
       viewport: undefined,
-      onNodesChange: (changes) => set((s) => ({ nodes: applyNodeChanges(changes, s.nodes) })),
-      onEdgesChange: (changes) => set((s) => ({ edges: applyEdgeChanges(changes, s.edges) })),
+      past: [],
+      future: [],
+      positionHistoryInProgress: false,
+      onNodesChange: (changes) =>
+        set((s) => {
+          const nodes = applyNodeChanges(changes, s.nodes)
+          const recordHistory = shouldRecordNodeChanges(changes, s) && nodes !== s.nodes
+          return {
+            nodes,
+            positionHistoryInProgress: getPositionHistoryInProgress(changes, s.positionHistoryInProgress),
+            ...(recordHistory ? pushHistory(s) : {}),
+          }
+        }),
+      onEdgesChange: (changes) =>
+        set((s) => {
+          const edges = applyEdgeChanges(changes, s.edges)
+          const recordHistory = shouldRecordEdgeChanges(changes) && edges !== s.edges
+          return {
+            edges,
+            ...(recordHistory ? pushHistory(s) : {}),
+          }
+        }),
       setNodes: (updater) =>
-        set((s) => ({ nodes: typeof updater === 'function' ? (updater as (n: Node[]) => Node[])(s.nodes) : updater })),
+        set((s) => {
+          const nodes = typeof updater === 'function' ? (updater as (n: Node[]) => Node[])(s.nodes) : updater
+          return {
+            nodes,
+            ...(nodes !== s.nodes ? pushHistory(s) : {}),
+          }
+        }),
       setEdges: (updater) =>
-        set((s) => ({ edges: typeof updater === 'function' ? (updater as (e: Edge[]) => Edge[])(s.edges) : updater })),
+        set((s) => {
+          const edges = typeof updater === 'function' ? (updater as (e: Edge[]) => Edge[])(s.edges) : updater
+          return {
+            edges,
+            ...(edges !== s.edges ? pushHistory(s) : {}),
+          }
+        }),
       setViewport: (viewport) => set({ viewport }),
-      replaceFlow: (snapshot) =>
-        set({ nodes: snapshot.nodes, edges: snapshot.edges, viewport: snapshot.viewport }),
-      resetFlow: () => set({ nodes: defaultNodes, edges: defaultEdges, viewport: undefined }),
+      replaceFlow: (snapshot, options) =>
+        set((s) => {
+          const next = { nodes: snapshot.nodes, edges: snapshot.edges }
+          const recordHistory = options?.recordHistory !== false && hasGraphChanged(s, next)
+          return {
+            ...next,
+            variables: sanitizeVariables(snapshot.variables),
+            viewport: snapshot.viewport,
+            positionHistoryInProgress: false,
+            ...(recordHistory ? pushHistory(s) : { future: [] }),
+          }
+        }),
+      resetFlow: () =>
+        set((s) => {
+          const next = { nodes: defaultNodes, edges: defaultEdges }
+          return {
+            ...next,
+            variables: defaultVariables,
+            viewport: undefined,
+            positionHistoryInProgress: false,
+            ...(hasGraphChanged(s, next) ? pushHistory(s) : {}),
+          }
+        }),
+      undo: () =>
+        set((s) => {
+          const previous = s.past.at(-1)
+          if (!previous) return {}
+          const restored = applyHistorySnapshot(previous, s)
+          return {
+            nodes: restored.nodes,
+            edges: restored.edges,
+            past: s.past.slice(0, -1),
+            future: [createHistorySnapshot(s), ...s.future].slice(0, HISTORY_LIMIT),
+            positionHistoryInProgress: false,
+          }
+        }),
+      redo: () =>
+        set((s) => {
+          const next = s.future[0]
+          if (!next) return {}
+          const restored = applyHistorySnapshot(next, s)
+          return {
+            nodes: restored.nodes,
+            edges: restored.edges,
+            past: [...s.past, createHistorySnapshot(s)].slice(-HISTORY_LIMIT),
+            future: s.future.slice(1),
+            positionHistoryInProgress: false,
+          }
+        }),
+      addVariable: () =>
+        set((s) => ({
+          variables: [
+            ...s.variables,
+            {
+              id: createVariableId(),
+              name: getNextVariableName(s.variables),
+              type: 'string',
+              value: '',
+            },
+          ],
+        })),
+      updateVariable: (id, patch) =>
+        set((s) => ({
+          variables: s.variables.map((variable) =>
+            variable.id === id
+              ? {
+                  ...variable,
+                  ...patch,
+                  name: patch.name === undefined ? variable.name : normalizeVariableName(patch.name),
+                }
+              : variable
+          ),
+        })),
+      deleteVariable: (id) =>
+        set((s) => ({
+          variables: s.variables.filter((variable) => variable.id !== id),
+        })),
     }),
     {
       name: FLOW_STORAGE_KEY,
@@ -104,6 +340,7 @@ export const useFlowStore = create<FlowState>()(
       partialize: (state) => ({
         nodes: sanitizeNodes(state.nodes),
         edges: state.edges,
+        variables: sanitizeVariables(state.variables),
         viewport: state.viewport,
       }),
       migrate: (persisted) => {
@@ -112,6 +349,7 @@ export const useFlowStore = create<FlowState>()(
         return {
           ...p,
           nodes: Array.isArray(p.nodes) ? sanitizeNodes(p.nodes as Node[]) : [],
+          variables: sanitizeVariables(p.variables),
         }
       },
       merge: (persisted, current) => {
@@ -121,6 +359,7 @@ export const useFlowStore = create<FlowState>()(
           ...current,
           ...p,
           nodes: Array.isArray(p.nodes) ? sanitizeNodes(p.nodes as Node[]) : current.nodes,
+          variables: Array.isArray(p.variables) ? sanitizeVariables(p.variables) : current.variables,
         }
       },
     }

@@ -4,9 +4,6 @@ import {
   MousePointer2,
   Hand,
   GitBranch,
-  Bug,
-  Play,
-  Square,
   Share2,
   LayoutGrid,
   Eye,
@@ -14,34 +11,84 @@ import {
   Minus,
   ChevronRight,
 } from 'lucide-react'
-import { useReactFlow } from '@xyflow/react'
+import { useReactFlow, useViewport, type Edge, type Node } from '@xyflow/react'
 import { toast } from 'sonner'
 import { useFlowStore } from '@/stores/flow-store'
 import { buildShareUrl } from '@/utils/flow/share'
 import { cn } from '@/lib/utils'
 
 type Tool = 'select' | 'pan' | 'connect'
-type RunStatus = 'idle' | 'running'
+
+const LAYOUT_COLUMN_GAP = 340
+const LAYOUT_ROW_GAP = 160
+
+const autoLayoutNodes = (nodes: Node[], edges: Edge[]) => {
+  const nodeIds = new Set(nodes.map((node) => node.id))
+  const incomingCount = new Map(nodes.map((node) => [node.id, 0]))
+  const outgoing = new Map(nodes.map((node) => [node.id, [] as string[]]))
+
+  edges.forEach((edge) => {
+    if (!nodeIds.has(edge.source) || !nodeIds.has(edge.target)) return
+    outgoing.get(edge.source)?.push(edge.target)
+    incomingCount.set(edge.target, (incomingCount.get(edge.target) ?? 0) + 1)
+  })
+
+  const depth = new Map(nodes.map((node) => [node.id, 0]))
+  const queue = nodes
+    .filter((node) => (incomingCount.get(node.id) ?? 0) === 0)
+    .map((node) => node.id)
+
+  for (let cursor = 0; cursor < queue.length; cursor += 1) {
+    const id = queue[cursor]
+    const nextDepth = (depth.get(id) ?? 0) + 1
+    outgoing.get(id)?.forEach((targetId) => {
+      depth.set(targetId, Math.max(depth.get(targetId) ?? 0, nextDepth))
+      incomingCount.set(targetId, (incomingCount.get(targetId) ?? 1) - 1)
+      if (incomingCount.get(targetId) === 0) queue.push(targetId)
+    })
+  }
+
+  const columns = new Map<number, Node[]>()
+  nodes.forEach((node) => {
+    const column = depth.get(node.id) ?? 0
+    columns.set(column, [...(columns.get(column) ?? []), node])
+  })
+
+  return nodes.map((node) => {
+    const column = depth.get(node.id) ?? 0
+    const columnNodes = columns.get(column) ?? []
+    const row = columnNodes.findIndex((columnNode) => columnNode.id === node.id)
+    const yOffset = ((columnNodes.length - 1) * LAYOUT_ROW_GAP) / 2
+
+    return {
+      ...node,
+      position: {
+        x: column * LAYOUT_COLUMN_GAP,
+        y: row * LAYOUT_ROW_GAP - yOffset,
+      },
+    }
+  })
+}
 
 export function CanvasToolbar() {
   const [tool, setTool] = useState<Tool>('select')
-  const [status, setStatus] = useState<RunStatus>('idle')
-  const [zoom, setZoom] = useState(100)
-  const { zoomIn, zoomOut, fitView, getZoom } = useReactFlow()
+  const { zoom } = useViewport()
+  const { zoomIn, zoomOut, fitView } = useReactFlow()
+  const zoomPercent = Math.round(zoom * 100)
 
   const handleZoomIn = () => {
-    zoomIn()
-    setTimeout(() => setZoom(Math.round(getZoom() * 100)), 50)
+    void zoomIn()
   }
   const handleZoomOut = () => {
-    zoomOut()
-    setTimeout(() => setZoom(Math.round(getZoom() * 100)), 50)
+    void zoomOut()
   }
-  const handleFit = () => fitView({ duration: 200 })
+  const handleFit = () => {
+    void fitView({ duration: 200 })
+  }
 
   const handleShare = async () => {
-    const { nodes, edges } = useFlowStore.getState()
-    const url = buildShareUrl({ nodes, edges, viewport: undefined })
+    const { nodes, edges, variables } = useFlowStore.getState()
+    const url = buildShareUrl({ nodes, edges, variables, viewport: undefined })
     try {
       await navigator.clipboard.writeText(url)
       toast.success('Share link copied')
@@ -50,8 +97,18 @@ export function CanvasToolbar() {
     }
   }
 
-  const toggleRun = () => {
-    setStatus((s) => (s === 'idle' ? 'running' : 'idle'))
+  const handleAutoLayout = () => {
+    const { nodes, edges, setNodes } = useFlowStore.getState()
+    if (nodes.length < 2) {
+      toast.info('Add at least two nodes to auto layout')
+      return
+    }
+
+    setNodes(autoLayoutNodes(nodes, edges))
+    toast.success('Flow auto-arranged')
+    window.requestAnimationFrame(() => {
+      void fitView({ duration: 200, padding: 0.2 })
+    })
   }
 
   return (
@@ -73,7 +130,7 @@ export function CanvasToolbar() {
             <Minus className="h-3 w-3" />
           </button>
           <span className="px-1 text-[10px] font-mono text-[#C8C8DC] tabular-nums w-9 text-center">
-            {zoom}%
+            {zoomPercent}%
           </span>
           <button
             type="button"
@@ -109,38 +166,18 @@ export function CanvasToolbar() {
         />
       </div>
 
-      {/* Right — debug + run + share + layout + view */}
+      {/* Right — share + layout + view */}
       <div className="flex items-center gap-1">
-        <ToolBtn icon={<Bug className="h-3.5 w-3.5" />} title="Debug" />
-        <button
-          type="button"
-          onClick={toggleRun}
-          className={cn(
-            'flex items-center gap-1.5 rounded-md px-3 py-1.5 text-[12px] font-semibold transition-all',
-            status === 'running'
-              ? 'bg-[#F43F5E]/15 text-[#F43F5E] border border-[#F43F5E]/40 hover:bg-[#F43F5E]/25'
-              : 'bg-[#14F195]/15 text-[#14F195] border border-[#14F195]/40 hover:bg-[#14F195]/25'
-          )}
-        >
-          {status === 'running' ? (
-            <>
-              <Square className="h-3 w-3 fill-current" />
-              Stop
-            </>
-          ) : (
-            <>
-              <Play className="h-3 w-3 fill-current" />
-              Run
-            </>
-          )}
-        </button>
-        <div className="mx-1 h-4 w-px bg-[#1F1F2E]" />
         <ToolBtn
           icon={<Share2 className="h-3.5 w-3.5" />}
           title="Share"
           onClick={handleShare}
         />
-        <ToolBtn icon={<LayoutGrid className="h-3.5 w-3.5" />} title="Auto layout" />
+        <ToolBtn
+          icon={<LayoutGrid className="h-3.5 w-3.5" />}
+          title="Auto layout"
+          onClick={handleAutoLayout}
+        />
         <ToolBtn icon={<Eye className="h-3.5 w-3.5" />} title="Preview" />
       </div>
     </div>

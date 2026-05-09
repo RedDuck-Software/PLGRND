@@ -3,11 +3,9 @@ import {
   Pencil,
   Undo2,
   Redo2,
-  History,
   Share2,
   Download,
   Settings,
-  Sparkles,
   ChevronDown,
   Check,
 } from 'lucide-react'
@@ -24,6 +22,10 @@ export const Header = () => {
   const [editingName, setEditingName] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
   const { getViewport } = useReactFlow()
+  const canUndo = useFlowStore((s) => s.past.length > 0)
+  const canRedo = useFlowStore((s) => s.future.length > 0)
+  const undo = useFlowStore((s) => s.undo)
+  const redo = useFlowStore((s) => s.redo)
 
   useEffect(() => {
     if (editingName) {
@@ -33,9 +35,9 @@ export const Header = () => {
   }, [editingName])
 
   const handleShare = async () => {
-    const { nodes, edges } = useFlowStore.getState()
+    const { nodes, edges, variables } = useFlowStore.getState()
     const viewport = getViewport()
-    const url = buildShareUrl({ nodes, edges, viewport })
+    const url = buildShareUrl({ nodes, edges, variables, viewport })
     try {
       await navigator.clipboard.writeText(url)
       toast.success('Share link copied')
@@ -127,11 +129,20 @@ export const Header = () => {
           <span className="text-[12px] text-[#8B8B9E]">Auto-saved</span>
         </div>
 
-        {/* Right — action buttons + Ask AI */}
+        {/* Right — action buttons */}
         <div className="flex items-center gap-1">
-          <GhostBtn icon={<Undo2 className="h-3.5 w-3.5" />} title="Undo" />
-          <GhostBtn icon={<Redo2 className="h-3.5 w-3.5" />} title="Redo" />
-          <GhostBtn icon={<History className="h-3.5 w-3.5" />} title="History" />
+          <GhostBtn
+            icon={<Undo2 className="h-3.5 w-3.5" />}
+            title="Undo"
+            onClick={undo}
+            disabled={!canUndo}
+          />
+          <GhostBtn
+            icon={<Redo2 className="h-3.5 w-3.5" />}
+            title="Redo"
+            onClick={redo}
+            disabled={!canRedo}
+          />
           <GhostBtn
             icon={<Share2 className="h-3.5 w-3.5" />}
             title="Share"
@@ -139,17 +150,6 @@ export const Header = () => {
           />
           <GhostBtn icon={<Download className="h-3.5 w-3.5" />} title="Download" />
           <GhostBtn icon={<Settings className="h-3.5 w-3.5" />} title="Settings" />
-          <div className="mx-2 h-5 w-px bg-[#1F1F2E]" />
-          <button
-            type="button"
-            className={cn(
-              'flex items-center gap-1.5 rounded-md px-3 py-1.5 text-[13px] font-semibold transition-all',
-              'bg-[#9945FF] text-white hover:bg-[#8438EE] shadow-[0_2px_8px_rgba(153,69,255,0.4)]'
-            )}
-          >
-            <Sparkles className="h-3.5 w-3.5" />
-            Ask AI
-          </button>
         </div>
       </header>
 
@@ -162,17 +162,25 @@ function GhostBtn({
   icon,
   title,
   onClick,
+  disabled,
 }: {
   icon: React.ReactNode
   title: string
   onClick?: () => void
+  disabled?: boolean
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
       title={title}
-      className="flex h-7 w-7 items-center justify-center rounded-md text-[#8B8B9E] hover:bg-[#13131D] hover:text-foreground transition-colors"
+      disabled={disabled}
+      className={cn(
+        'flex h-7 w-7 items-center justify-center rounded-md text-[#8B8B9E] transition-colors',
+        disabled
+          ? 'cursor-not-allowed opacity-40'
+          : 'hover:bg-[#13131D] hover:text-foreground'
+      )}
     >
       {icon}
     </button>

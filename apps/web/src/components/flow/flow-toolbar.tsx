@@ -1,7 +1,7 @@
 import { Panel } from '@xyflow/react'
 import { ExampleFlowsModal } from './example-flows-modal'
 import { useState } from 'react'
-import { Sparkles } from 'lucide-react'
+import { Library } from 'lucide-react'
 
 export const FlowToolbar = () => {
   const [examplesOpen, setExamplesOpen] = useState(false)
@@ -14,7 +14,7 @@ export const FlowToolbar = () => {
           onClick={() => setExamplesOpen(true)}
           className="flex items-center gap-1.5 rounded-md border border-[#252525] bg-[#141414] px-3 py-1.5 text-[10px] font-mono text-muted-foreground hover:text-foreground hover:bg-[#1f1f1f] transition-colors cursor-pointer ml-1"
         >
-          <Sparkles className="h-3 w-3" />
+          <Library className="h-3 w-3" />
           Examples
         </button>
       </Panel>

@@ -1,6 +1,6 @@
 import LZString from 'lz-string'
 import type { FlowSnapshot } from '@/stores/flow-store'
-import { FLOW_STORAGE_VERSION, sanitizeNodes } from '@/stores/flow-store'
+import { FLOW_STORAGE_VERSION, sanitizeNodes, sanitizeVariables } from '@/stores/flow-store'
 
 export const FLOW_HASH_KEY = 'flow'
 
@@ -8,6 +8,7 @@ interface SerializedFlow {
   v: number
   nodes: FlowSnapshot['nodes']
   edges: FlowSnapshot['edges']
+  variables?: FlowSnapshot['variables']
   viewport?: FlowSnapshot['viewport']
 }
 
@@ -16,6 +17,7 @@ export const encodeFlowToHash = (snapshot: FlowSnapshot): string => {
     v: FLOW_STORAGE_VERSION,
     nodes: sanitizeNodes(snapshot.nodes),
     edges: snapshot.edges,
+    variables: sanitizeVariables(snapshot.variables),
     viewport: snapshot.viewport,
   }
   return LZString.compressToEncodedURIComponent(JSON.stringify(payload))
@@ -27,7 +29,12 @@ export const decodeFlowFromHash = (encoded: string): FlowSnapshot | null => {
     if (!json) return null
     const parsed = JSON.parse(json) as SerializedFlow
     if (!Array.isArray(parsed.nodes) || !Array.isArray(parsed.edges)) return null
-    return { nodes: sanitizeNodes(parsed.nodes), edges: parsed.edges, viewport: parsed.viewport }
+    return {
+      nodes: sanitizeNodes(parsed.nodes),
+      edges: parsed.edges,
+      variables: sanitizeVariables(parsed.variables),
+      viewport: parsed.viewport,
+    }
   } catch {
     return null
   }

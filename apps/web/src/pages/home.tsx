@@ -21,7 +21,18 @@ import { CanvasOverlays } from '@/components/flow/canvas-overlays'
 import { getNodeStyles } from '@/utils/node/node-style.utils'
 import type { NodeType } from '@/types/node'
 
-const textCompatibleTargetTypes = new Set(['text', 'publicKey', 'signature', 'privateKey', 'mint'])
+const textCompatibleTargetTypes = new Set([
+  'text',
+  'publicKey',
+  'signature',
+  'privateKey',
+  'mint',
+  'number',
+  'uiAmount',
+  'decimals',
+  'boolean',
+  'network',
+])
 const publicKeyCompatibleTargetTypes = new Set(['publicKey', 'mint'])
 const numberCompatibleTargetTypes = new Set(['number', 'uiAmount', 'decimals'])
 const uiAmountCompatibleTargetTypes = new Set(['uiAmount', 'number'])
@@ -74,7 +85,7 @@ export default function Home() {
   useEffect(() => {
     const shared = readFlowFromLocation()
     if (shared) {
-      replaceFlow(shared)
+      replaceFlow(shared, { recordHistory: false })
       clearFlowHash()
     }
   }, [replaceFlow])

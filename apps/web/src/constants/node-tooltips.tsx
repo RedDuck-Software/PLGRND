@@ -249,7 +249,7 @@ export const NODE_TOOLTIPS: Partial<Record<NodeType, React.ReactNode>> = {
         key.
       </p>
       <p>
-        Plug the <BoldText>Wallet</BoldText> output into the Transaction node — the wallet will be prompted to sign when
+        Plug the <BoldText>Wallet</BoldText> output into the Transaction node — the wallet will request a signature when
         you press Send.
       </p>
     </>

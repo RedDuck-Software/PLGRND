@@ -1,6 +1,8 @@
 import { useMemo } from 'react'
 import { useNodeConnections, useNodesData, type Node } from '@xyflow/react'
 import type { NodeTypeEnum, TargetFieldsForEnum } from '@/types/node'
+import { useFlowStore } from '@/stores/flow-store'
+import { resolveFlowVariables } from '@/utils/flow/variables'
 
 export type ResolvedConnection<V = unknown> = {
   sourceId?: string
@@ -21,6 +23,7 @@ function parseHandleMeta(handleId: string, nodeId: string): string {
 
 export function useTypedNodesData<T extends TargetFieldsForEnum<NodeTypeEnum>>(id: string) {
   const connections = useNodeConnections({ handleType: 'target', id })
+  const variables = useFlowStore((s) => s.variables)
 
   const sourceIds = useMemo(() => {
     return (connections ?? []).map((c) => c.source).filter((id): id is string => Boolean(id))
@@ -41,6 +44,7 @@ export function useTypedNodesData<T extends TargetFieldsForEnum<NodeTypeEnum>>(i
       const node = connection.source ? (nodesById.get(connection.source) ?? null) : null
       const dataField = parseHandleMeta(connection.sourceHandle!, connection.source)
       const raw = dataField && node ? node.data?.[dataField] : undefined
+      const value = resolveFlowVariables(raw, variables)
 
       const key = parseHandleMeta(connection.targetHandle!, connection.target) as T
 
@@ -48,9 +52,9 @@ export function useTypedNodesData<T extends TargetFieldsForEnum<NodeTypeEnum>>(i
         sourceId: connection.source,
         sourceHandleId: connection.sourceHandle!,
         dataField,
-        value: raw,
+        value,
       }
     }
     return record
-  }, [connections, nodesById])
+  }, [connections, nodesById, variables])
 }
