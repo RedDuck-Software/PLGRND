@@ -33,9 +33,9 @@ export const BaseTooltip = ({ trigger, content, type }: BaseTooltipProps) => {
           <button
             type="button"
             aria-label="Node info"
-            className="inline-flex items-center text-foreground/80 hover:text-foreground"
+            className="inline-flex items-center text-[#6E6E80] hover:text-foreground transition-colors"
           >
-            <Info size={10} />
+            <Info size={11} />
           </button>
         )}
       </DialogTrigger>

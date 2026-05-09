@@ -8,7 +8,7 @@ export const useTypedReactFlow = () => {
     <T>(id: string, dataUpdate: Partial<T> | ((node: Node) => Partial<T>), options?: { replace: boolean }) => {
       return reactFlowInstance.updateNodeData(id, dataUpdate, options)
     },
-    [reactFlowInstance.updateNodeData]
+    [reactFlowInstance]
   )
 
   return {

@@ -2,7 +2,9 @@ import { useCallback, useEffect } from 'react'
 import {
   ReactFlow,
   addEdge,
-  Controls,
+  Background,
+  BackgroundVariant,
+  MarkerType,
   MiniMap,
   type Connection,
   type IsValidConnection,
@@ -14,7 +16,10 @@ import {
 import { nodeMap } from '@/utils/node/node-map'
 import { useFlowStore } from '@/stores/flow-store'
 import { readFlowFromLocation, clearFlowHash } from '@/utils/flow/share'
-import { FlowToolbar } from '@/components/flow/flow-toolbar'
+import { EmptyState } from '@/components/flow/empty-state'
+import { CanvasOverlays } from '@/components/flow/canvas-overlays'
+import { getNodeStyles } from '@/utils/node/node-style.utils'
+import type { NodeType } from '@/types/node'
 
 const textCompatibleTargetTypes = new Set(['text', 'publicKey', 'signature', 'privateKey', 'mint'])
 const publicKeyCompatibleTargetTypes = new Set(['publicKey', 'mint'])
@@ -25,11 +30,9 @@ const walletCompatibleTargetTypes = new Set(['wallet', 'privateKey'])
 
 const getHandleMaxConnections = (handleId?: string | null) => {
   if (!handleId) return undefined
-
   const handleEl = document.querySelector(`[data-id="${handleId}"]`) as HTMLElement | null
   const raw = handleEl?.getAttribute('data-max-connections')
   if (!raw) return undefined
-
   const maxConnections = Number(raw)
   return Number.isFinite(maxConnections) ? maxConnections : undefined
 }
@@ -37,7 +40,6 @@ const getHandleMaxConnections = (handleId?: string | null) => {
 const canConnectToTargetHandle = (targetHandle: string | null | undefined, edges: Edge[]) => {
   const maxConnections = getHandleMaxConnections(targetHandle)
   if (maxConnections === undefined) return true
-
   const currentConnections = edges.filter((edge) => edge.targetHandle === targetHandle).length
   return currentConnections < maxConnections
 }
@@ -67,6 +69,8 @@ export default function Home() {
   const setViewport = useFlowStore((s) => s.setViewport)
   const replaceFlow = useFlowStore((s) => s.replaceFlow)
 
+  const isEmpty = nodes.length === 0
+
   useEffect(() => {
     const shared = readFlowFromLocation()
     if (shared) {
@@ -79,20 +83,39 @@ export default function Home() {
     (params: Connection) => {
       setEdges((edgesSnapshot) => {
         if (!canConnectToTargetHandle(params.targetHandle, edgesSnapshot)) return edgesSnapshot
-        return addEdge(params, edgesSnapshot)
+        // Color edge based on source node's category color
+        const sourceNode = nodes.find((n) => n.id === params.source)
+        const color = sourceNode
+          ? getNodeStyles(sourceNode.type as NodeType).color
+          : '#9945FF'
+        return addEdge(
+          {
+            ...params,
+            type: 'smoothstep',
+            className: 'edge--new',
+            style: { stroke: color, strokeWidth: 1.75 },
+            markerEnd: {
+              type: MarkerType.ArrowClosed,
+              color,
+              width: 14,
+              height: 14,
+            },
+          },
+          edgesSnapshot
+        )
       })
       const all = Array.from(document.querySelectorAll('[data-handle-type]')) as HTMLElement[]
       for (const el of all) el.classList.remove('handle--dim', 'handle--highlight')
       document.body.removeAttribute('data-connecting-type')
     },
-    [setEdges]
+    [setEdges, nodes]
   )
+
   const isValidConnection: IsValidConnection = useCallback(
     (edge) => {
       if (!('sourceHandle' in edge) || !('targetHandle' in edge)) return true
       const c = edge as Connection
       if (!canConnectToTargetHandle(c.targetHandle, edges)) return false
-
       const sourceEl = document.querySelector(`[data-id="${c.sourceHandle}"]`) as HTMLElement | null
       const targetEl = document.querySelector(`[data-id="${c.targetHandle}"]`) as HTMLElement | null
       const srcType = sourceEl?.getAttribute('data-type')
@@ -101,6 +124,7 @@ export default function Home() {
     },
     [edges]
   )
+
   const onConnectStart = useCallback(
     (_: unknown, params: { handleId: string | null; nodeId: string | null; handleType: string | null }) => {
       if (!params?.handleId) return
@@ -112,7 +136,6 @@ export default function Home() {
         const tgtType = el.getAttribute('data-type')
         const hasAvailableSlot = canConnectToTargetHandle(targetHandle, edges)
         const isCompatible = areHandleTypesCompatible(srcType, tgtType)
-
         if (hasAvailableSlot && isCompatible) {
           el.classList.remove('handle--dim')
         } else {
@@ -123,6 +146,7 @@ export default function Home() {
     },
     [edges]
   )
+
   const onConnectEnd = useCallback(() => {
     const all = Array.from(document.querySelectorAll('[data-handle-type]')) as HTMLElement[]
     for (const el of all) el.classList.remove('handle--dim', 'handle--highlight')
@@ -146,13 +170,37 @@ export default function Home() {
         }
       }
     }
-
     document.addEventListener('keydown', handleKeyDown)
     return () => document.removeEventListener('keydown', handleKeyDown)
   }, [nodes, setNodes, setEdges])
 
   return (
-    <div style={{ width: '100vw', height: 'calc(100vh - 74px)' }}>
+    <div className="relative flex-1 w-full h-full">
+      {/* Decorative radial glows on canvas */}
+      <div
+        className="pointer-events-none absolute z-0"
+        style={{
+          top: '-15%',
+          left: '-10%',
+          width: 600,
+          height: 600,
+          background: 'radial-gradient(closest-side, rgba(153,69,255,0.16), transparent 70%)',
+        }}
+      />
+      <div
+        className="pointer-events-none absolute z-0"
+        style={{
+          bottom: '-15%',
+          right: '-10%',
+          width: 600,
+          height: 600,
+          background: 'radial-gradient(closest-side, rgba(20,241,149,0.10), transparent 70%)',
+        }}
+      />
+
+      {isEmpty && <EmptyState onBrowseBricks={() => {}} />}
+      <CanvasOverlays />
+
       <ReactFlow
         colorMode="dark"
         nodes={nodes}
@@ -170,12 +218,30 @@ export default function Home() {
         fitView={!viewport}
         selectionOnDrag={true}
         selectionMode={SelectionMode.Full}
-        panOnDrag={false}
-        className="bg-teal-50"
+        panOnDrag={[1, 2]}
+        className="flow-canvas"
+        proOptions={{ hideAttribution: true }}
+        defaultEdgeOptions={{
+          type: 'smoothstep',
+          animated: false,
+          style: { stroke: '#2A2A40', strokeWidth: 1.5 },
+        }}
+        connectionLineStyle={{ stroke: '#9945FF', strokeWidth: 1.5 }}
       >
-        <MiniMap />
-        <Controls />
-        <FlowToolbar />
+        <Background
+          variant={BackgroundVariant.Dots}
+          gap={20}
+          size={1}
+          color="#1F1F2E"
+        />
+        <MiniMap
+          className="flow-minimap"
+          nodeColor="#2A2A40"
+          maskColor="rgba(8,8,15,0.7)"
+          position="bottom-right"
+          pannable
+          zoomable
+        />
       </ReactFlow>
     </div>
   )
