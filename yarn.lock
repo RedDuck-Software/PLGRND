@@ -14161,6 +14161,7 @@ __metadata:
     typescript: "npm:~5.8.3"
     typescript-eslint: "npm:^8.44.0"
     vite: "npm:^7.1.7"
+    wrangler: "npm:^4.44.0"
     zod: "npm:^4.1.11"
     zustand: "npm:^5.0.8"
   languageName: unknown
