@@ -25,8 +25,7 @@ const ErrorFallback = ({ error, resetErrorBoundary }: FallbackProps) => {
     <div className="flex flex-col items-center justify-center min-h-screen bg-background text-foreground">
       <div className="flex flex-col items-center gap-6 p-8">
         <div className="flex items-center gap-2">
-          <img src="/logo-light.svg" alt="logo" className="w-16 h-16" />
-          <h1 className="font-mono text-3xl">SOL LEARN</h1>
+          <h1 className="font-mono text-3xl">PLGRND</h1>
         </div>
 
         <div className="text-center space-y-2">
