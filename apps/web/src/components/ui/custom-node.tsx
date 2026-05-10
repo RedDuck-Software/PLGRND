@@ -15,6 +15,7 @@ import type { NodeActionConfig } from '@/types/node-action'
 import { generateNodeId } from '@/utils/crypto/crypto.utils'
 import type { HandleConfig } from '@/types/node-handle'
 import { BaseTooltip } from '@/components/ui/tooltip'
+import { DynamicIcon, type IconName } from 'lucide-react/dynamic'
 
 interface Props extends PropsWithChildren, NodeProps {
   className?: string
@@ -22,7 +23,15 @@ interface Props extends PropsWithChildren, NodeProps {
   extraHandles?: HandleConfig[]
 }
 
-const handleSpacing = 12
+const handleSpacing = 22
+
+// Convert "TEXT_INPUT" -> "Text Input"
+const toTitleCase = (str: string) =>
+  str
+    .toLowerCase()
+    .split('_')
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(' ')
 
 export const CustomNode = ({
   className,
@@ -42,42 +51,34 @@ export const CustomNode = ({
 
   const nodeStyles = getNodeStyles(type as NodeType)
   const nodeConfig = getNodeConfig(type as NodeType)
-  // Track how many handles we have rendered per position to stack them
-  const handleIndices: Record<string, number> = {}
-  const handleCounts: Record<string, number> = {}
+  const color = nodeStyles.color
 
   const allHandles = [...nodeConfig.handles, ...(extraHandles ?? [])]
 
+  const handleIndices: Record<string, number> = {}
+  const handleCounts: Record<string, number> = {}
   allHandles.forEach((h) => {
     const key = String(h.position)
     handleCounts[key] = (handleCounts[key] ?? 0) + 1
   })
-
   actions?.forEach((action) => {
     const posKey = String(action.position)
     handleCounts[posKey] = (handleCounts[posKey] ?? 0) + 1
   })
 
-  const maxHandleCount = Math.max(...Object.values(handleCounts))
-
-  const minHeight = Math.max(maxHandleCount * 16, nodeStyles.height ?? 0)
+  const maxHandleCount = Math.max(...Object.values(handleCounts), 0)
 
   const addDisplayNodeOnDoubleClick = (handleId: string, position: Position) => {
     if (position === Position.Left) return
-
-    const newPosition = { x: positionAbsoluteX + (nodeStyles.width ?? 200) + 50, y: positionAbsoluteY }
+    const newPosition = {
+      x: positionAbsoluteX + (nodeStyles.width ?? 200) + 50,
+      y: positionAbsoluteY,
+    }
     const newId = generateNodeId()
     setNodes((nds) =>
-      nds.concat({
-        id: newId,
-        type: NodeTypeEnum.DISPLAY,
-        position: newPosition,
-        data: {},
-      })
+      nds.concat({ id: newId, type: NodeTypeEnum.DISPLAY, position: newPosition, data: {} })
     )
-
     const targetHandle = newId + '-' + 'input' + '-' + Position.Left
-
     setTimeout(() => {
       updateNodeInternals(newId)
       setEdges((eds) =>
@@ -92,96 +93,169 @@ export const CustomNode = ({
     }, 0)
   }
 
+  const titleLabel = toTitleCase(nodeConfig.label)
+
   return (
-    <div style={{ width: nodeStyles.width }} className={cn('relative rounded-[8px] text-foreground')}>
+    <div
+      style={{ width: nodeStyles.width }}
+      className="relative text-foreground"
+    >
       <div
-        style={{ height: nodeStyles.height ?? 'auto', minHeight }}
         className={cn(
-          'relative z-20',
-          'p-3 rounded-[8px] transition-all bg-background border-border border shadow-md',
-          className,
-          selected && 'border-active-border bg-border'
+          'group/node relative rounded-[10px] overflow-hidden transition-all duration-150',
+          'bg-[#13131D] hover:bg-[#15151F]',
+          className
         )}
+        style={{
+          border: `1px solid ${selected ? `${color}cc` : `${color}66`}`,
+          boxShadow: selected
+            ? `0 0 0 2px ${color}33, 0 8px 28px ${color}40`
+            : `0 6px 22px ${color}22`,
+        }}
       >
-        {allHandles.map((handle) => {
-          const posKey = String(handle.position)
-          const index = handleIndices[posKey] ?? 0
-          const count = handleCounts[posKey] ?? 1
-          const offsetFromCenter = (index - (count - 1) / 2) * handleSpacing
+        {/* Header */}
+        <div
+          className="flex items-center gap-2 px-3 h-8"
+          style={{ backgroundColor: `${color}1F` }}
+        >
+          {/* Icon box */}
+          <div
+            className="flex h-5 w-5 shrink-0 items-center justify-center rounded-[4px]"
+            style={{ backgroundColor: color }}
+          >
+            <DynamicIcon
+              name={nodeStyles.icon as IconName}
+              size={12}
+              color="#08080F"
+              strokeWidth={2.5}
+            />
+          </div>
+          {/* Title */}
+          <span
+            className="text-[12px] font-bold text-white truncate"
+            style={{ fontFamily: 'Inter, system-ui, sans-serif' }}
+          >
+            {titleLabel}
+          </span>
+          {/* Category badge */}
+          <span
+            className="ml-auto rounded-[4px] px-1.5 py-[1px] text-[9px] font-semibold uppercase tracking-wide font-mono"
+            style={{
+              backgroundColor: `${color}22`,
+              color,
+            }}
+          >
+            {nodeStyles.category}
+          </span>
+          <div className="opacity-60 hover:opacity-100 transition-opacity shrink-0">
+            <BaseTooltip type={type as NodeType} />
+          </div>
+        </div>
 
-          handleIndices[posKey] = index + 1
+        {/* Body */}
+        <div
+          className="relative flex flex-col px-3 py-2.5 gap-1.5"
+          style={{ minHeight: maxHandleCount * handleSpacing + 8 }}
+        >
+          {/* Render handle rows: left = inputs, right = outputs */}
+          {allHandles.map((handle) => {
+            const posKey = String(handle.position)
+            const index = handleIndices[posKey] ?? 0
+            handleIndices[posKey] = index + 1
 
-          const handleId = id + '-' + handle.dataField + '-' + handle.position
-          const isConnected =
-            handle.type === 'source'
-              ? (sourceConnections ?? []).some((c) => c.sourceHandle === handleId)
-              : (targetConnections ?? []).some((c) => c.targetHandle === handleId)
-          return (
-            <Handle
-              key={handleId}
-              id={handleId}
-              onDoubleClick={() => addDisplayNodeOnDoubleClick(handleId, handle.position)}
-              className={cn(
-                'top-1/2 w-1.5! h-1.5! min-w-1.5! min-h-1.5! relative rounded-full! border! border-sidebar-foreground!',
-                isConnected ? 'bg-foreground!' : 'bg-transparent!'
-              )}
-              type={handle.type}
-              position={handle.position}
-              style={{ marginTop: offsetFromCenter }}
-              data-field={handle.dataField}
-              data-id={handleId}
-              data-handle-type={handle.type}
-              data-type={(handle as HandleConfig & { dataType?: string }).dataType}
-              data-max-connections={handle.maxConnections}
-            >
-              {!isConnected && <div className="pointer-events-none absolute inset-1 rounded-full bg-background"></div>}
-              <div
-                className={cn(
-                  'absolute text-[7px] whitespace-nowrap top-1/2 translate-y-[-50%] leading-[8px]',
-                  handle.type === 'target' ? 'left-1.5' : 'right-1.5'
-                )}
+            const handleId = id + '-' + handle.dataField + '-' + handle.position
+            const isLeft = handle.position === Position.Left
+            const isConnected =
+              handle.type === 'source'
+                ? (sourceConnections ?? []).some((c) => c.sourceHandle === handleId)
+                : (targetConnections ?? []).some((c) => c.targetHandle === handleId)
+
+            const topPx = index * handleSpacing + 12
+
+            return (
+              <Handle
+                key={handleId}
+                id={handleId}
+                onDoubleClick={() => addDisplayNodeOnDoubleClick(handleId, handle.position)}
+                type={handle.type}
+                position={handle.position}
+                isConnectable
+                className="!cursor-crosshair"
+                style={{
+                  position: 'absolute',
+                  top: topPx,
+                  [isLeft ? 'left' : 'right']: 12,
+                  width: 8,
+                  height: 8,
+                  minWidth: 8,
+                  minHeight: 8,
+                  borderRadius: 999,
+                  border: `1.5px solid #08080F`,
+                  background: color,
+                  boxShadow: isConnected ? `0 0 0 2px ${color}33` : 'none',
+                  zIndex: 10,
+                }}
+                data-field={handle.dataField}
+                data-id={handleId}
+                data-handle-type={handle.type}
+                data-type={(handle as HandleConfig & { dataType?: string }).dataType}
+                data-max-connections={handle.maxConnections}
               >
-                {handle.label?.includes('\n')
-                  ? handle.label.split('\n').map((line, i) => <div key={i}>{line}</div>)
-                  : handle.label}
-              </div>
-            </Handle>
-          )
-        })}
-        {actions?.map((action) => {
-          const posKey = String(action.position)
-          const index = handleIndices[posKey] ?? 0
-          const count = handleCounts[posKey] ?? 1
-          const offsetFromCenter = (index - (count - 1) / 2) * handleSpacing
+                {handle.label && (
+                  <span
+                    className="pointer-events-none absolute top-1/2 -translate-y-1/2 whitespace-nowrap text-[10px] font-mono text-[#C8C8DC] leading-none"
+                    style={{
+                      [isLeft ? 'left' : 'right']: 14,
+                    }}
+                  >
+                    {handle.label.includes('\n')
+                      ? handle.label.split('\n').map((line, i) => <div key={i}>{line}</div>)
+                      : handle.label}
+                  </span>
+                )}
+              </Handle>
+            )
+          })}
 
-          handleIndices[posKey] = index + 1
-          return (
-            <button
-              onClick={action.onClick}
-              key={id + '-' + action.label + '-' + action.position}
-              className={cn(
-                'absolute cursor-pointer group top-1/2 flex transition-all active:scale-90 items-center gap-0.5 translate-y-[-50%]',
-                action.position === Position.Left ? 'left-0 -translate-x-1' : 'right-0 translate-x-1 flex-row-reverse'
-              )}
-              style={{ marginTop: offsetFromCenter }}
+          {/* Action buttons */}
+          {actions?.map((action) => {
+            const posKey = String(action.position)
+            const index = handleIndices[posKey] ?? 0
+            handleIndices[posKey] = index + 1
+            const isLeft = action.position === Position.Left
+            const topPx = index * handleSpacing + 12
+
+            return (
+              <button
+                onClick={action.onClick}
+                key={id + '-' + action.label + '-' + action.position}
+                className="absolute flex items-center gap-1 cursor-pointer transition-all active:scale-95 z-20"
+                style={{
+                  top: topPx - 4,
+                  [isLeft ? 'left' : 'right']: 6,
+                  flexDirection: isLeft ? 'row' : 'row-reverse',
+                }}
+              >
+                <div
+                  className="rounded-[3px] p-0.5"
+                  style={{ backgroundColor: color }}
+                />
+                <span className="text-[8px] leading-none font-mono text-muted-foreground">
+                  {action.label}
+                </span>
+              </button>
+            )
+          })}
+
+          {/* Custom children content (renders below handles area) */}
+          {children && (
+            <div
+              className="relative"
+              style={{ marginTop: maxHandleCount * handleSpacing }}
             >
-              <div style={{ backgroundColor: nodeStyles.color }} className="rounded-[2px] p-1"></div>
-              <div className={cn('text-[7px] leading-[10px]')}>{action.label}</div>
-            </button>
-          )
-        })}
-        {children}
-      </div>
-      <div
-        style={{ backgroundColor: nodeStyles.color }}
-        className={cn(
-          'absolute z-10 top-0 flex items-end justify-center left-0 h-[calc(100%+12px)] w-full border-border border rounded-[8px]',
-          selected && 'border-active-border'
-        )}
-      >
-        <div className="flex items-center gap-1">
-          <p className="uppercase text-[10px] leading-[12px] font-bold">{nodeConfig.label}</p>
-          <BaseTooltip type={type as NodeType} />
+              {children}
+            </div>
+          )}
         </div>
       </div>
     </div>

@@ -1,39 +1,39 @@
 @import 'tailwindcss';
 
 :root {
-  --background: #171717;
-  --foreground: #e2e8f0;
-  --card: #171717;
-  --card-foreground: #e2e8f0;
-  --popover: #242424;
-  --popover-foreground: #a9a9a9;
-  --primary: #006239;
-  --primary-foreground: #dde8e3;
-  --secondary: #242424;
+  --background: #08080F;
+  --foreground: #E6E6F0;
+  --card: #0E0E18;
+  --card-foreground: #E6E6F0;
+  --popover: #13131D;
+  --popover-foreground: #C8C8DC;
+  --primary: #9945FF;
+  --primary-foreground: #ffffff;
+  --secondary: #13131D;
   --secondary-foreground: #fafafa;
-  --muted: #1f1f1f;
-  --muted-foreground: #a2a2a2;
-  --accent: #313131;
+  --muted: #0E0E18;
+  --muted-foreground: #6E6E80;
+  --accent: #1F1F2E;
   --accent-foreground: #fafafa;
-  --destructive: #541c15;
-  --destructive-foreground: #ede9e8;
-  --border: #1f1f1f;
-  --active-border: #313131;
-  --input: #242424;
-  --ring: #4ade80;
-  --chart-1: #4ade80;
-  --chart-2: #60a5fa;
-  --chart-3: #a78bfa;
-  --chart-4: #fbbf24;
-  --chart-5: #2dd4bf;
-  --sidebar: #121212;
-  --sidebar-foreground: #898989;
-  --sidebar-primary: #006239;
-  --sidebar-primary-foreground: #dde8e3;
-  --sidebar-accent: #313131;
+  --destructive: #F43F5E;
+  --destructive-foreground: #fee2e2;
+  --border: #1F1F2E;
+  --active-border: #2A2A40;
+  --input: #13131D;
+  --ring: #9945FF;
+  --chart-1: #14F195;
+  --chart-2: #5B9BFF;
+  --chart-3: #A78BFA;
+  --chart-4: #FFB849;
+  --chart-5: #00C2A0;
+  --sidebar: #0B0B14;
+  --sidebar-foreground: #888899;
+  --sidebar-primary: #9945FF;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #13131D;
   --sidebar-accent-foreground: #fafafa;
-  --sidebar-border: #292929;
-  --sidebar-ring: #4ade80;
+  --sidebar-border: #1F1F2E;
+  --sidebar-ring: #9945FF;
   --font-sans: Outfit, sans-serif;
   --font-serif: ui-serif, Georgia, Cambria, 'Times New Roman', Times, serif;
   --font-mono: 'Kode Mono', monospace;
@@ -294,17 +294,195 @@ body {
   color: var(--foreground);
 }
 
+/* ────────────────── ReactFlow canvas ────────────────── */
+.flow-canvas {
+  background-color: #08080F !important;
+}
+
+/* Edges */
+.flow-canvas .react-flow__edge-path {
+  stroke-width: 1.75;
+  transition: stroke-width 0.15s ease, filter 0.15s ease;
+}
+.flow-canvas .react-flow__edge:hover .react-flow__edge-path,
+.flow-canvas .react-flow__edge.selected .react-flow__edge-path,
+.flow-canvas .react-flow__edge.selectable:focus .react-flow__edge-path {
+  stroke-width: 2.5 !important;
+  filter: drop-shadow(0 0 4px currentColor);
+}
+.flow-canvas .react-flow__connection-path {
+  stroke: #9945FF;
+  stroke-width: 1.75;
+  stroke-dasharray: 6 6;
+  filter: drop-shadow(0 0 4px rgba(153, 69, 255, 0.5));
+  animation: dashFlow 1s linear infinite;
+}
+
+@keyframes dashFlow {
+  to {
+    stroke-dashoffset: -12;
+  }
+}
+
+/* New edge flash animation */
+@keyframes edgeFlash {
+  0% {
+    stroke-width: 4;
+    filter: drop-shadow(0 0 8px currentColor) drop-shadow(0 0 16px currentColor);
+    opacity: 1;
+  }
+  60% {
+    stroke-width: 3;
+    filter: drop-shadow(0 0 4px currentColor);
+    opacity: 1;
+  }
+  100% {
+    stroke-width: 1.75;
+    filter: none;
+    opacity: 1;
+  }
+}
+.edge--new .react-flow__edge-path {
+  animation: edgeFlash 700ms ease-out;
+}
+
+/* Selection rect */
+.flow-canvas .react-flow__nodesselection-rect,
+.flow-canvas .react-flow__selection {
+  background: rgba(153, 69, 255, 0.08) !important;
+  border: 1px dashed #9945FF !important;
+  border-radius: 8px;
+}
+
+/* Controls */
+.flow-controls {
+  border: 1px solid #1f1f1f !important;
+  background: #141414 !important;
+  border-radius: 8px !important;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+.flow-controls button {
+  background: #141414 !important;
+  border-bottom: 1px solid #1f1f1f !important;
+  color: #888 !important;
+  width: 28px !important;
+  height: 28px !important;
+}
+.flow-controls button:hover {
+  background: #1f1f1f !important;
+  color: #e6e6e6 !important;
+}
+.flow-controls button:last-child {
+  border-bottom: none !important;
+}
+.flow-controls button svg {
+  fill: currentColor !important;
+  max-width: 14px !important;
+  max-height: 14px !important;
+}
+
+/* MiniMap */
+.flow-minimap {
+  background: #141414 !important;
+  border: 1px solid #1f1f1f !important;
+  border-radius: 8px !important;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+.flow-minimap .react-flow__minimap-mask {
+  fill: rgba(10, 10, 10, 0.6);
+  stroke: #2a2a2a;
+}
+
+/* Connection handles — global states */
+.react-flow__handle {
+  z-index: 30 !important;
+  cursor: crosshair !important;
+  transition: box-shadow 0.12s ease, outline 0.12s ease;
+}
+.react-flow__handle::after {
+  /* Larger invisible click area for easier connections */
+  content: '';
+  position: absolute;
+  inset: -8px;
+  border-radius: 999px;
+  background: transparent;
+}
+.react-flow__handle:hover {
+  outline: 3px solid rgba(255, 255, 255, 0.15);
+  outline-offset: -1px;
+}
+.react-flow__handle.connectingfrom,
+.react-flow__handle.connectingto {
+  outline: 3px solid rgba(153, 69, 255, 0.45) !important;
+  outline-offset: -1px;
+}
 .handle--highlight {
-  outline: 2px solid var(--color-primary, #4ade80);
-  outline-offset: 2px;
-  box-shadow: 0 0 0 2px rgba(74, 222, 128, 0.3);
+  outline: 3px solid rgba(153, 69, 255, 0.45) !important;
+  outline-offset: -1px;
 }
 .handle--dim {
-  opacity: 0.3;
-  pointer-events: none;
+  opacity: 0.25 !important;
+  pointer-events: none !important;
 }
+
+/* ────────────────── Scrollbars ────────────────── */
+*::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+*::-webkit-scrollbar-thumb {
+  background: #1F1F2E;
+  border-radius: 3px;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background: #2A2A40;
+}
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #1F1F2E transparent;
+}
+
+/* ────────────────── Animations ────────────────── */
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes auraPulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.4;
+    filter: blur(12px);
+  }
+  50% {
+    transform: scale(1.18);
+    opacity: 0.7;
+    filter: blur(20px);
+  }
+}
+
+/* ────────────────── ReactFlow MiniMap ────────────────── */
+.flow-minimap {
+  margin: 12px !important;
+}
+
 .handle--dim:hover {
-  opacity: 0.3;
+  opacity: 0.25 !important;
 }
 .handle--dim * {
   opacity: inherit !important;

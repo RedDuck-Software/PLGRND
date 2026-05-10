@@ -1,9 +1,12 @@
-import { useCallback, useEffect } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import {
   ReactFlow,
   addEdge,
-  Controls,
+  Background,
+  BackgroundVariant,
+  MarkerType,
   MiniMap,
+  useReactFlow,
   type Connection,
   type IsValidConnection,
   type Node,
@@ -13,10 +16,25 @@ import {
 } from '@xyflow/react'
 import { nodeMap } from '@/utils/node/node-map'
 import { useFlowStore } from '@/stores/flow-store'
+import { useUIStore } from '@/stores/ui-store'
 import { readFlowFromLocation, clearFlowHash } from '@/utils/flow/share'
-import { FlowToolbar } from '@/components/flow/flow-toolbar'
+import { EmptyState } from '@/components/flow/empty-state'
+import { CanvasOverlays } from '@/components/flow/canvas-overlays'
+import { getNodeStyles } from '@/utils/node/node-style.utils'
+import type { NodeType } from '@/types/node'
 
-const textCompatibleTargetTypes = new Set(['text', 'publicKey', 'signature', 'privateKey', 'mint'])
+const textCompatibleTargetTypes = new Set([
+  'text',
+  'publicKey',
+  'signature',
+  'privateKey',
+  'mint',
+  'number',
+  'uiAmount',
+  'decimals',
+  'boolean',
+  'network',
+])
 const publicKeyCompatibleTargetTypes = new Set(['publicKey', 'mint'])
 const numberCompatibleTargetTypes = new Set(['number', 'uiAmount', 'decimals'])
 const uiAmountCompatibleTargetTypes = new Set(['uiAmount', 'number'])
@@ -25,11 +43,9 @@ const walletCompatibleTargetTypes = new Set(['wallet', 'privateKey'])
 
 const getHandleMaxConnections = (handleId?: string | null) => {
   if (!handleId) return undefined
-
   const handleEl = document.querySelector(`[data-id="${handleId}"]`) as HTMLElement | null
   const raw = handleEl?.getAttribute('data-max-connections')
   if (!raw) return undefined
-
   const maxConnections = Number(raw)
   return Number.isFinite(maxConnections) ? maxConnections : undefined
 }
@@ -37,7 +53,6 @@ const getHandleMaxConnections = (handleId?: string | null) => {
 const canConnectToTargetHandle = (targetHandle: string | null | undefined, edges: Edge[]) => {
   const maxConnections = getHandleMaxConnections(targetHandle)
   if (maxConnections === undefined) return true
-
   const currentConnections = edges.filter((edge) => edge.targetHandle === targetHandle).length
   return currentConnections < maxConnections
 }
@@ -57,6 +72,11 @@ const areHandleTypesCompatible = (srcType?: string | null, tgtType?: string | nu
 }
 
 export default function Home() {
+  const [emptyStateDismissed, setEmptyStateDismissed] = useState(false)
+  const setLeftCollapsed = useUIStore((s) => s.setLeftCollapsed)
+  const canvasTool = useUIStore((s) => s.canvasTool)
+  const { fitView, screenToFlowPosition } = useReactFlow()
+  const setCursorPosition = useUIStore((s) => s.setCursorPosition)
   const nodes = useFlowStore((s) => s.nodes)
   const edges = useFlowStore((s) => s.edges)
   const viewport = useFlowStore((s) => s.viewport)
@@ -66,11 +86,29 @@ export default function Home() {
   const setEdges = useFlowStore((s) => s.setEdges)
   const setViewport = useFlowStore((s) => s.setViewport)
   const replaceFlow = useFlowStore((s) => s.replaceFlow)
+  const fitViewTrigger = useFlowStore((s) => s.fitViewTrigger)
+
+  const isEmpty = nodes.length === 0
+
+  useEffect(() => {
+    if (nodes.length > 0) setEmptyStateDismissed(false)
+  }, [nodes.length])
+
+  useEffect(() => {
+    if (fitViewTrigger === 0) return
+    const id = requestAnimationFrame(() => fitView({ duration: 300, padding: 0.15 }))
+    return () => cancelAnimationFrame(id)
+  }, [fitViewTrigger, fitView])
+
+  const handleBrowseBricks = useCallback(() => {
+    setEmptyStateDismissed(true)
+    setLeftCollapsed(false)
+  }, [setLeftCollapsed])
 
   useEffect(() => {
     const shared = readFlowFromLocation()
     if (shared) {
-      replaceFlow(shared)
+      replaceFlow(shared, { recordHistory: false })
       clearFlowHash()
     }
   }, [replaceFlow])
@@ -79,20 +117,39 @@ export default function Home() {
     (params: Connection) => {
       setEdges((edgesSnapshot) => {
         if (!canConnectToTargetHandle(params.targetHandle, edgesSnapshot)) return edgesSnapshot
-        return addEdge(params, edgesSnapshot)
+        // Color edge based on source node's category color
+        const sourceNode = nodes.find((n) => n.id === params.source)
+        const color = sourceNode
+          ? getNodeStyles(sourceNode.type as NodeType).color
+          : '#9945FF'
+        return addEdge(
+          {
+            ...params,
+            type: 'smoothstep',
+            className: 'edge--new',
+            style: { stroke: color, strokeWidth: 1.75 },
+            markerEnd: {
+              type: MarkerType.ArrowClosed,
+              color,
+              width: 14,
+              height: 14,
+            },
+          },
+          edgesSnapshot
+        )
       })
       const all = Array.from(document.querySelectorAll('[data-handle-type]')) as HTMLElement[]
       for (const el of all) el.classList.remove('handle--dim', 'handle--highlight')
       document.body.removeAttribute('data-connecting-type')
     },
-    [setEdges]
+    [setEdges, nodes]
   )
+
   const isValidConnection: IsValidConnection = useCallback(
     (edge) => {
       if (!('sourceHandle' in edge) || !('targetHandle' in edge)) return true
       const c = edge as Connection
       if (!canConnectToTargetHandle(c.targetHandle, edges)) return false
-
       const sourceEl = document.querySelector(`[data-id="${c.sourceHandle}"]`) as HTMLElement | null
       const targetEl = document.querySelector(`[data-id="${c.targetHandle}"]`) as HTMLElement | null
       const srcType = sourceEl?.getAttribute('data-type')
@@ -101,6 +158,7 @@ export default function Home() {
     },
     [edges]
   )
+
   const onConnectStart = useCallback(
     (_: unknown, params: { handleId: string | null; nodeId: string | null; handleType: string | null }) => {
       if (!params?.handleId) return
@@ -112,7 +170,6 @@ export default function Home() {
         const tgtType = el.getAttribute('data-type')
         const hasAvailableSlot = canConnectToTargetHandle(targetHandle, edges)
         const isCompatible = areHandleTypesCompatible(srcType, tgtType)
-
         if (hasAvailableSlot && isCompatible) {
           el.classList.remove('handle--dim')
         } else {
@@ -123,6 +180,7 @@ export default function Home() {
     },
     [edges]
   )
+
   const onConnectEnd = useCallback(() => {
     const all = Array.from(document.querySelectorAll('[data-handle-type]')) as HTMLElement[]
     for (const el of all) el.classList.remove('handle--dim', 'handle--highlight')
@@ -146,13 +204,50 @@ export default function Home() {
         }
       }
     }
-
     document.addEventListener('keydown', handleKeyDown)
     return () => document.removeEventListener('keydown', handleKeyDown)
   }, [nodes, setNodes, setEdges])
 
+  const handleMouseMove = useCallback((e: React.MouseEvent) => {
+    const pos = screenToFlowPosition({ x: e.clientX, y: e.clientY })
+    setCursorPosition({ x: Math.round(pos.x), y: Math.round(pos.y) })
+  }, [screenToFlowPosition, setCursorPosition])
+
+  const handleMouseLeave = useCallback(() => {
+    setCursorPosition(null)
+  }, [setCursorPosition])
+
   return (
-    <div style={{ width: '100vw', height: 'calc(100vh - 74px)' }}>
+    <div
+      className="relative flex-1 w-full h-full"
+      onMouseMove={handleMouseMove}
+      onMouseLeave={handleMouseLeave}
+    >
+      {/* Decorative radial glows on canvas */}
+      <div
+        className="pointer-events-none absolute z-0"
+        style={{
+          top: '-15%',
+          left: '-10%',
+          width: 600,
+          height: 600,
+          background: 'radial-gradient(closest-side, rgba(153,69,255,0.16), transparent 70%)',
+        }}
+      />
+      <div
+        className="pointer-events-none absolute z-0"
+        style={{
+          bottom: '-15%',
+          right: '-10%',
+          width: 600,
+          height: 600,
+          background: 'radial-gradient(closest-side, rgba(20,241,149,0.10), transparent 70%)',
+        }}
+      />
+
+      {isEmpty && !emptyStateDismissed && <EmptyState onBrowseBricks={handleBrowseBricks} />}
+      <CanvasOverlays />
+
       <ReactFlow
         colorMode="dark"
         nodes={nodes}
@@ -168,14 +263,33 @@ export default function Home() {
         isValidConnection={isValidConnection}
         defaultViewport={viewport}
         fitView={!viewport}
-        selectionOnDrag={true}
+        selectionOnDrag={canvasTool === 'select'}
         selectionMode={SelectionMode.Full}
-        panOnDrag={false}
-        className="bg-teal-50"
+        panOnDrag={canvasTool === 'pan' ? true : [1, 2]}
+        nodesDraggable={canvasTool !== 'pan'}
+        className="flow-canvas"
+        proOptions={{ hideAttribution: true }}
+        defaultEdgeOptions={{
+          type: 'smoothstep',
+          animated: false,
+          style: { stroke: '#2A2A40', strokeWidth: 1.5 },
+        }}
+        connectionLineStyle={{ stroke: '#9945FF', strokeWidth: 1.5 }}
       >
-        <MiniMap />
-        <Controls />
-        <FlowToolbar />
+        <Background
+          variant={BackgroundVariant.Dots}
+          gap={20}
+          size={1}
+          color="#1F1F2E"
+        />
+        <MiniMap
+          className="flow-minimap"
+          nodeColor="#2A2A40"
+          maskColor="rgba(8,8,15,0.7)"
+          position="bottom-right"
+          pannable
+          zoomable
+        />
       </ReactFlow>
     </div>
   )
