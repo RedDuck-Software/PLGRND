@@ -1,18 +1,15 @@
 {
-  "name": "solana-build",
+  "name": "plgrnd",
   "version": "1.0.0",
   "license": "MIT",
   "private": true,
   "packageManager": "yarn@4.13.0",
   "scripts": {
-    "landing:dev": "yarn workspace landing dev",
-    "landing:build": "yarn workspace landing build",
     "web:dev": "yarn workspace web dev",
     "web:build": "yarn workspace web build",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "format:web": "yarn workspace web format",
-    "format:landing": "yarn workspace landing format"
+    "format:web": "yarn workspace web format"
   },
   "workspaces": [
     "apps/*"
