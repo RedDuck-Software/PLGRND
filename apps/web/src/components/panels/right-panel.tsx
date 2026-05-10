@@ -9,7 +9,9 @@ import {
   Trash2,
   Copy as CopyIcon,
   Plus,
+  Info,
 } from 'lucide-react'
+import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip'
 import { cn } from '@/lib/utils'
 import { useFlowStore } from '@/stores/flow-store'
 import { resolveFlowVariables } from '@/utils/flow/variables'
@@ -93,9 +95,7 @@ function Tab({
       onClick={onClick}
       className={cn(
         'relative flex flex-1 items-center justify-center gap-1.5 text-[13px] transition-colors',
-        active
-          ? 'text-foreground font-semibold'
-          : 'text-[#8B8B9E] hover:text-foreground font-medium'
+        active ? 'text-foreground font-semibold' : 'text-[#8B8B9E] hover:text-foreground font-medium'
       )}
     >
       <span className={active ? 'text-[#9945FF]' : ''}>{icon}</span>
@@ -147,9 +147,7 @@ function InspectorTab() {
 
   const handleDelete = () => {
     setNodes((nds) => nds.filter((n) => n.id !== selected.id))
-    setEdges((eds) =>
-      eds.filter((e) => e.source !== selected.id && e.target !== selected.id)
-    )
+    setEdges((eds) => eds.filter((e) => e.source !== selected.id && e.target !== selected.id))
     toast.success('Node deleted')
   }
 
@@ -174,12 +172,7 @@ function InspectorTab() {
           className="flex h-9 w-9 items-center justify-center rounded-lg shrink-0"
           style={{ backgroundColor: styles.color }}
         >
-          <DynamicIcon
-            name={styles.icon as IconName}
-            size={18}
-            color="#08080F"
-            strokeWidth={2.5}
-          />
+          <DynamicIcon name={styles.icon as IconName} size={18} color="#08080F" strokeWidth={2.5} />
         </div>
         <div className="min-w-0 flex flex-col gap-0.5 flex-1">
           <span className="text-[13px] font-semibold text-foreground leading-none">
@@ -189,10 +182,7 @@ function InspectorTab() {
               .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
               .join(' ')}
           </span>
-          <span
-            className="font-mono text-[10px] uppercase tracking-wider"
-            style={{ color: styles.color }}
-          >
+          <span className="font-mono text-[10px] uppercase tracking-wider" style={{ color: styles.color }}>
             {styles.category}
           </span>
         </div>
@@ -232,11 +222,7 @@ function InspectorTab() {
               value={Math.round(selected.position.x)}
               onChange={(v) =>
                 setNodes((nds) =>
-                  nds.map((n) =>
-                    n.id === selected.id
-                      ? { ...n, position: { ...n.position, x: v } }
-                      : n
-                  )
+                  nds.map((n) => (n.id === selected.id ? { ...n, position: { ...n.position, x: v } } : n))
                 )
               }
             />
@@ -245,11 +231,7 @@ function InspectorTab() {
               value={Math.round(selected.position.y)}
               onChange={(v) =>
                 setNodes((nds) =>
-                  nds.map((n) =>
-                    n.id === selected.id
-                      ? { ...n, position: { ...n.position, y: v } }
-                      : n
-                  )
+                  nds.map((n) => (n.id === selected.id ? { ...n, position: { ...n.position, y: v } } : n))
                 )
               }
             />
@@ -328,23 +310,13 @@ function InspectorTab() {
 function Field({ label, children }: { label: React.ReactNode; children: React.ReactNode }) {
   return (
     <div className="flex flex-col gap-1.5">
-      <span className="text-[10px] font-bold uppercase tracking-[0.12em] text-[#8B8B9E]">
-        {label}
-      </span>
+      <span className="text-[10px] font-bold uppercase tracking-[0.12em] text-[#8B8B9E]">{label}</span>
       {children}
     </div>
   )
 }
 
-function PositionInput({
-  label,
-  value,
-  onChange,
-}: {
-  label: string
-  value: number
-  onChange: (v: number) => void
-}) {
+function PositionInput({ label, value, onChange }: { label: string; value: number; onChange: (v: number) => void }) {
   return (
     <div className="flex items-center gap-1.5 rounded-md border border-[#1F1F2E] bg-[#08080F] px-2 py-1">
       <span className="text-[9px] font-mono font-semibold text-[#6E6E80]">{label}</span>
@@ -385,10 +357,7 @@ function PortRow({
   return (
     <div className="flex flex-col gap-1 rounded-md border border-[#1F1F2E] bg-[#08080F] px-2.5 py-1.5">
       <div className="flex items-center gap-2">
-        <span
-          className="h-1.5 w-1.5 shrink-0 rounded-full"
-          style={{ backgroundColor: color }}
-        />
+        <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ backgroundColor: color }} />
         <span className="flex-1 truncate text-[11px] font-mono text-[#C8C8DC]">{name}</span>
         <span
           className="rounded px-1.5 py-0.5 text-[9px] font-mono font-semibold uppercase tracking-wide"
@@ -399,9 +368,7 @@ function PortRow({
       </div>
       {displayValue && (
         <div className="flex items-center gap-1.5 pl-3.5">
-          {isVariable && (
-            <span className="text-[9px] font-mono text-[#9945FF] shrink-0">{rawStr}</span>
-          )}
+          {isVariable && <span className="text-[9px] font-mono text-[#9945FF] shrink-0">{rawStr}</span>}
           {isVariable && <span className="text-[9px] text-[#3A3A4D]">→</span>}
           <span className="break-all text-[10px] font-mono text-[#8B8B9E]">{resolvedStr || rawStr}</span>
         </div>
@@ -428,12 +395,22 @@ function VariablesTab() {
       {/* Header */}
       <div className="flex items-center justify-between border-b border-[#1F1F2E] px-4 py-2.5">
         <div className="flex items-center gap-2">
-          <span className="text-[11px] font-bold uppercase tracking-[0.12em] text-[#C8C8DC]">
-            Flow Variables
-          </span>
-          <span className="rounded-md border border-[#1F1F2E] bg-[#13131D] px-1.5 py-0.5 text-[10px] font-mono text-[#8B8B9E]">
-            {variables.length}
-          </span>
+          <span className="text-[11px] font-bold uppercase tracking-[0.12em] text-[#C8C8DC]">Flow Variables</span>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                type="button"
+                aria-label="How to use variables"
+                className="rounded-md border border-[#1F1F2E] bg-[#13131D] px-1.5 py-1.5 text-[10px] font-mono text-[#8B8B9E] hover:text-foreground hover:border-[#2A2A3E] transition-colors inline-flex items-center"
+              >
+                <Info className="h-3 w-3" />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent className="max-w-[240px] rounded-md border border-[#1F1F2E] bg-[#13131D] px-2.5 py-1.5 text-[11px] font-mono text-[#C8C8DC] shadow-md">
+              Reference a variable inside any node by typing <span className="text-[#9945FF]">$NAME</span>, where{' '}
+              <span className="text-[#9945FF]">NAME</span> is the variable&apos;s name.
+            </TooltipContent>
+          </Tooltip>
         </div>
         <button
           type="button"
@@ -461,10 +438,7 @@ function VariablesTab() {
           const isNameEmpty = variable.name.length === 0
 
           return (
-            <div
-              key={variable.id}
-              className="rounded-lg border border-[#1F1F2E] bg-[#13131D] transition-colors p-2.5"
-            >
+            <div key={variable.id} className="rounded-lg border border-[#1F1F2E] bg-[#13131D] transition-colors p-2.5">
               <div className="flex items-center gap-2">
                 <span
                   className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-[12px] font-mono font-bold"
@@ -477,9 +451,7 @@ function VariablesTab() {
                   onChange={(e) => updateVariable(variable.id, { name: e.target.value })}
                   className={cn(
                     'h-7 min-w-0 flex-1 rounded-md border bg-[#08080F] px-2 text-[11px] font-mono font-semibold text-foreground outline-none transition-colors',
-                    hasDuplicateName || isNameEmpty
-                      ? 'border-[#F43F5E]/60'
-                      : 'border-[#1F1F2E] focus:border-[#9945FF]'
+                    hasDuplicateName || isNameEmpty ? 'border-[#F43F5E]/60' : 'border-[#1F1F2E] focus:border-[#9945FF]'
                   )}
                 />
                 <input
