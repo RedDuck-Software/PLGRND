@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect, useRef } from 'react'
 import { useReactFlow, type XYPosition } from '@xyflow/react'
-import { Library, Search, ChevronDown, ChevronRight, PanelLeftClose } from 'lucide-react'
+import { Library, Search, ChevronDown, ChevronRight, PanelLeftClose, PanelLeftOpen } from 'lucide-react'
 import { menuConfig } from '@/constants/menu-config'
 import { DraggableNode } from '@/components/node-select/draggable-node'
 import { generateNodeId } from '@/utils/crypto/crypto.utils'
@@ -9,7 +9,7 @@ import type { NodeType } from '@/types/node'
 
 const totalCount = menuConfig.reduce((acc, c) => acc + c.nodes.length, 0)
 
-export function BrickLibrary() {
+export function BrickLibrary({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => void }) {
   const { screenToFlowPosition, setNodes } = useReactFlow()
   const [search, setSearch] = useState('')
   const [openCategories, setOpenCategories] = useState<Set<string>>(
@@ -76,6 +76,21 @@ export function BrickLibrary() {
     }))
     .filter((cat) => cat.nodes.length > 0)
 
+  if (collapsed) {
+    return (
+      <aside className="flex w-10 shrink-0 flex-col items-center border-r border-[#1F1F2E] bg-[#0E0E18] pt-3">
+        <button
+          type="button"
+          onClick={onToggle}
+          className="flex h-[26px] w-[26px] items-center justify-center rounded-md border border-[#1F1F2E] bg-[#13131D] hover:bg-[#1F1F2E] transition-colors"
+          title="Expand"
+        >
+          <PanelLeftOpen className="h-3.5 w-3.5 text-[#C8C8DC]" />
+        </button>
+      </aside>
+    )
+  }
+
   return (
     <aside className="flex flex-col w-[280px] shrink-0 bg-[#0E0E18] border-r border-[#1F1F2E] overflow-hidden">
       {/* Header */}
@@ -91,6 +106,7 @@ export function BrickLibrary() {
         </div>
         <button
           type="button"
+          onClick={onToggle}
           className="flex h-[26px] w-[26px] items-center justify-center rounded-md border border-[#1F1F2E] bg-[#13131D] hover:bg-[#1F1F2E] transition-colors"
           title="Collapse"
         >

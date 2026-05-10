@@ -1,4 +1,4 @@
-import { useCallback, useEffect } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import {
   ReactFlow,
   addEdge,
@@ -6,6 +6,7 @@ import {
   BackgroundVariant,
   MarkerType,
   MiniMap,
+  useReactFlow,
   type Connection,
   type IsValidConnection,
   type Node,
@@ -15,6 +16,7 @@ import {
 } from '@xyflow/react'
 import { nodeMap } from '@/utils/node/node-map'
 import { useFlowStore } from '@/stores/flow-store'
+import { useUIStore } from '@/stores/ui-store'
 import { readFlowFromLocation, clearFlowHash } from '@/utils/flow/share'
 import { EmptyState } from '@/components/flow/empty-state'
 import { CanvasOverlays } from '@/components/flow/canvas-overlays'
@@ -70,6 +72,11 @@ const areHandleTypesCompatible = (srcType?: string | null, tgtType?: string | nu
 }
 
 export default function Home() {
+  const [emptyStateDismissed, setEmptyStateDismissed] = useState(false)
+  const setLeftCollapsed = useUIStore((s) => s.setLeftCollapsed)
+  const canvasTool = useUIStore((s) => s.canvasTool)
+  const { fitView, screenToFlowPosition } = useReactFlow()
+  const setCursorPosition = useUIStore((s) => s.setCursorPosition)
   const nodes = useFlowStore((s) => s.nodes)
   const edges = useFlowStore((s) => s.edges)
   const viewport = useFlowStore((s) => s.viewport)
@@ -79,8 +86,24 @@ export default function Home() {
   const setEdges = useFlowStore((s) => s.setEdges)
   const setViewport = useFlowStore((s) => s.setViewport)
   const replaceFlow = useFlowStore((s) => s.replaceFlow)
+  const fitViewTrigger = useFlowStore((s) => s.fitViewTrigger)
 
   const isEmpty = nodes.length === 0
+
+  useEffect(() => {
+    if (nodes.length > 0) setEmptyStateDismissed(false)
+  }, [nodes.length])
+
+  useEffect(() => {
+    if (fitViewTrigger === 0) return
+    const id = requestAnimationFrame(() => fitView({ duration: 300, padding: 0.15 }))
+    return () => cancelAnimationFrame(id)
+  }, [fitViewTrigger, fitView])
+
+  const handleBrowseBricks = useCallback(() => {
+    setEmptyStateDismissed(true)
+    setLeftCollapsed(false)
+  }, [setLeftCollapsed])
 
   useEffect(() => {
     const shared = readFlowFromLocation()
@@ -185,8 +208,21 @@ export default function Home() {
     return () => document.removeEventListener('keydown', handleKeyDown)
   }, [nodes, setNodes, setEdges])
 
+  const handleMouseMove = useCallback((e: React.MouseEvent) => {
+    const pos = screenToFlowPosition({ x: e.clientX, y: e.clientY })
+    setCursorPosition({ x: Math.round(pos.x), y: Math.round(pos.y) })
+  }, [screenToFlowPosition, setCursorPosition])
+
+  const handleMouseLeave = useCallback(() => {
+    setCursorPosition(null)
+  }, [setCursorPosition])
+
   return (
-    <div className="relative flex-1 w-full h-full">
+    <div
+      className="relative flex-1 w-full h-full"
+      onMouseMove={handleMouseMove}
+      onMouseLeave={handleMouseLeave}
+    >
       {/* Decorative radial glows on canvas */}
       <div
         className="pointer-events-none absolute z-0"
@@ -209,7 +245,7 @@ export default function Home() {
         }}
       />
 
-      {isEmpty && <EmptyState onBrowseBricks={() => {}} />}
+      {isEmpty && !emptyStateDismissed && <EmptyState onBrowseBricks={handleBrowseBricks} />}
       <CanvasOverlays />
 
       <ReactFlow
@@ -227,9 +263,10 @@ export default function Home() {
         isValidConnection={isValidConnection}
         defaultViewport={viewport}
         fitView={!viewport}
-        selectionOnDrag={true}
+        selectionOnDrag={canvasTool === 'select'}
         selectionMode={SelectionMode.Full}
-        panOnDrag={[1, 2]}
+        panOnDrag={canvasTool === 'pan' ? true : [1, 2]}
+        nodesDraggable={canvasTool !== 'pan'}
         className="flow-canvas"
         proOptions={{ hideAttribution: true }}
         defaultEdgeOptions={{

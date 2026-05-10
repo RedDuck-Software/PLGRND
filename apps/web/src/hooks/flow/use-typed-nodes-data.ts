@@ -41,12 +41,23 @@ export function useTypedNodesData<T extends TargetFieldsForEnum<NodeTypeEnum>>(i
     const record: Partial<Record<T, ResolvedConnection>> = {}
     for (const connection of connections) {
       if (!connection.source || !connection.target) continue
-      const node = connection.source ? (nodesById.get(connection.source) ?? null) : null
-      const dataField = parseHandleMeta(connection.sourceHandle!, connection.source)
+      if (!connection.sourceHandle || !connection.targetHandle) continue
+      const node = nodesById.get(connection.source) ?? null
+      const dataField = parseHandleMeta(connection.sourceHandle, connection.source)
       const raw = dataField && node ? node.data?.[dataField] : undefined
-      const value = resolveFlowVariables(raw, variables)
+      const resolved = resolveFlowVariables(raw, variables)
 
-      const key = parseHandleMeta(connection.targetHandle!, connection.target) as T
+      let value = resolved
+      if (node?.type === 'NUMBER') {
+        if (raw === undefined || raw === null || raw === '') {
+          value = undefined
+        } else {
+          const num = Number(resolved)
+          value = Number.isFinite(num) ? num : undefined
+        }
+      }
+
+      const key = parseHandleMeta(connection.targetHandle, connection.target) as T
 
       record[key] = {
         sourceId: connection.source,

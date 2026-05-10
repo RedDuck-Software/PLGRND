@@ -22,7 +22,7 @@ const STRING = '#FF8A4C'
 export const nodeStyles: Record<NodeType, NodeStyle> = {
   [NodeTypeEnum.TEXT]: { color: INPUT, icon: 'type', category: 'input', width: 220 },
   [NodeTypeEnum.DISPLAY]: { color: INPUT, icon: 'eye', category: 'display', width: 220 },
-  [NodeTypeEnum.NUMBER]: { color: INPUT, icon: 'hash', category: 'input', width: 140 },
+  [NodeTypeEnum.NUMBER]: { color: INPUT, icon: 'hash', category: 'input', width: 200 },
   [NodeTypeEnum.BOOLEAN]: { color: CONTROL, icon: 'toggle-left', category: 'control', width: 160 },
 
   [NodeTypeEnum.ADD]: { color: MATH, icon: 'plus', category: 'math', width: 192 },

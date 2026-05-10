@@ -1,23 +1,19 @@
-import { useState } from 'react'
+import { useEffect } from 'react'
 import {
   Maximize,
   MousePointer2,
   Hand,
-  GitBranch,
   Share2,
   LayoutGrid,
-  Eye,
   Plus,
   Minus,
-  ChevronRight,
 } from 'lucide-react'
 import { useReactFlow, useViewport, type Edge, type Node } from '@xyflow/react'
 import { toast } from 'sonner'
 import { useFlowStore } from '@/stores/flow-store'
+import { useUIStore } from '@/stores/ui-store'
 import { buildShareUrl } from '@/utils/flow/share'
 import { cn } from '@/lib/utils'
-
-type Tool = 'select' | 'pan' | 'connect'
 
 const LAYOUT_COLUMN_GAP = 340
 const LAYOUT_ROW_GAP = 160
@@ -71,10 +67,21 @@ const autoLayoutNodes = (nodes: Node[], edges: Edge[]) => {
 }
 
 export function CanvasToolbar() {
-  const [tool, setTool] = useState<Tool>('select')
+  const tool = useUIStore((s) => s.canvasTool)
+  const setTool = useUIStore((s) => s.setCanvasTool)
   const { zoom } = useViewport()
   const { zoomIn, zoomOut, fitView } = useReactFlow()
   const zoomPercent = Math.round(zoom * 100)
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return
+      if (e.key === 'v' || e.key === 'V') setTool('select')
+      if (e.key === 'h' || e.key === 'H') setTool('pan')
+    }
+    document.addEventListener('keydown', onKey)
+    return () => document.removeEventListener('keydown', onKey)
+  }, [setTool])
 
   const handleZoomIn = () => {
     void zoomIn()
@@ -115,12 +122,6 @@ export function CanvasToolbar() {
     <div className="flex h-[42px] shrink-0 items-center justify-between border-b border-[#1F1F2E] bg-background px-4">
       {/* Left — breadcrumb + zoom + fit */}
       <div className="flex items-center gap-2">
-        <div className="flex items-center gap-1.5">
-          <span className="text-[11px] text-[#8B8B9E]">Workspace</span>
-          <ChevronRight className="h-3 w-3 text-[#3A3A4D]" />
-          <span className="text-[11px] font-mono text-foreground">Untitled flow</span>
-        </div>
-        <div className="mx-1 h-4 w-px bg-[#1F1F2E]" />
         <div className="flex items-center gap-0.5 rounded-md border border-[#1F1F2E] bg-[#13131D]">
           <button
             type="button"
@@ -158,12 +159,6 @@ export function CanvasToolbar() {
           onClick={() => setTool('pan')}
           title="Pan (H)"
         />
-        <ModeBtn
-          icon={<GitBranch className="h-3.5 w-3.5" />}
-          active={tool === 'connect'}
-          onClick={() => setTool('connect')}
-          title="Connect (C)"
-        />
       </div>
 
       {/* Right — share + layout + view */}
@@ -178,7 +173,6 @@ export function CanvasToolbar() {
           title="Auto layout"
           onClick={handleAutoLayout}
         />
-        <ToolBtn icon={<Eye className="h-3.5 w-3.5" />} title="Preview" />
       </div>
     </div>
   )

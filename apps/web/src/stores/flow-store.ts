@@ -9,7 +9,7 @@ import {
   type EdgeChange,
   type Viewport,
 } from '@xyflow/react'
-import type { FlowVariable, FlowVariableType } from '@/types/flow-variable'
+import type { FlowVariable } from '@/types/flow-variable'
 import { normalizeVariableName } from '@/utils/flow/variables'
 
 export const FLOW_STORAGE_KEY = 'sol-learn:flow'
@@ -71,14 +71,9 @@ export const sanitizeVariables = (variables: unknown): FlowVariable[] => {
       if (!isPlainObject(variable)) return null
       const name = normalizeVariableName(String(variable.name ?? ''))
       if (!name) return null
-      const type = String(variable.type ?? 'string') as FlowVariableType
-      const safeType: FlowVariableType = ['string', 'number', 'boolean', 'publicKey'].includes(type)
-        ? type
-        : 'string'
       return {
         id: String(variable.id ?? crypto.randomUUID()),
         name,
-        type: safeType,
         value: String(variable.value ?? ''),
       }
     })
@@ -105,6 +100,7 @@ export interface FlowSnapshot {
   edges: Edge[]
   variables?: FlowVariable[]
   viewport?: Viewport
+  projectName?: string
 }
 
 interface FlowHistorySnapshot {
@@ -114,6 +110,8 @@ interface FlowHistorySnapshot {
 
 interface FlowState extends FlowSnapshot {
   variables: FlowVariable[]
+  projectName: string
+  fitViewTrigger: number
   past: FlowHistorySnapshot[]
   future: FlowHistorySnapshot[]
   positionHistoryInProgress: boolean
@@ -122,6 +120,7 @@ interface FlowState extends FlowSnapshot {
   setNodes: (updater: Node[] | ((nodes: Node[]) => Node[])) => void
   setEdges: (updater: Edge[] | ((edges: Edge[]) => Edge[])) => void
   setViewport: (viewport: Viewport) => void
+  setProjectName: (name: string) => void
   replaceFlow: (snapshot: FlowSnapshot, options?: { recordHistory?: boolean }) => void
   resetFlow: () => void
   undo: () => void
@@ -216,6 +215,8 @@ export const useFlowStore = create<FlowState>()(
       edges: defaultEdges,
       variables: defaultVariables,
       viewport: undefined,
+      projectName: 'Untitled flow',
+      fitViewTrigger: 0,
       past: [],
       future: [],
       positionHistoryInProgress: false,
@@ -255,6 +256,7 @@ export const useFlowStore = create<FlowState>()(
           }
         }),
       setViewport: (viewport) => set({ viewport }),
+      setProjectName: (name) => set({ projectName: name }),
       replaceFlow: (snapshot, options) =>
         set((s) => {
           const next = { nodes: snapshot.nodes, edges: snapshot.edges }
@@ -263,6 +265,8 @@ export const useFlowStore = create<FlowState>()(
             ...next,
             variables: sanitizeVariables(snapshot.variables),
             viewport: snapshot.viewport,
+            projectName: snapshot.projectName ?? s.projectName,
+            fitViewTrigger: s.fitViewTrigger + 1,
             positionHistoryInProgress: false,
             ...(recordHistory ? pushHistory(s) : { future: [] }),
           }
@@ -274,6 +278,7 @@ export const useFlowStore = create<FlowState>()(
             ...next,
             variables: defaultVariables,
             viewport: undefined,
+            projectName: 'Untitled flow',
             positionHistoryInProgress: false,
             ...(hasGraphChanged(s, next) ? pushHistory(s) : {}),
           }
@@ -311,7 +316,6 @@ export const useFlowStore = create<FlowState>()(
             {
               id: createVariableId(),
               name: getNextVariableName(s.variables),
-              type: 'string',
               value: '',
             },
           ],
@@ -342,6 +346,7 @@ export const useFlowStore = create<FlowState>()(
         edges: state.edges,
         variables: sanitizeVariables(state.variables),
         viewport: state.viewport,
+        projectName: state.projectName,
       }),
       migrate: (persisted) => {
         const p = persisted as Partial<FlowSnapshot> | undefined

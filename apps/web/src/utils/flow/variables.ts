@@ -16,24 +16,6 @@ export const normalizeVariableName = (name: string) => {
   return /^\d/.test(normalized) ? `_${normalized}` : normalized
 }
 
-export const castVariableValue = (variable: FlowVariable): unknown => {
-  const raw = variable.value.trim()
-
-  if (variable.type === 'number') {
-    const parsed = Number(raw)
-    return Number.isFinite(parsed) ? parsed : variable.value
-  }
-
-  if (variable.type === 'boolean') {
-    const normalized = raw.toLowerCase()
-    if (normalized === 'true' || normalized === '1') return true
-    if (normalized === 'false' || normalized === '0') return false
-    return variable.value
-  }
-
-  return variable.value
-}
-
 const createVariableMap = (variables: FlowVariable[]) => {
   const map = new Map<string, FlowVariable>()
   variables.forEach((variable) => {
@@ -50,12 +32,11 @@ export const resolveFlowVariables = (value: unknown, variables: FlowVariable[]) 
   const exactMatch = value.match(EXACT_VARIABLE_PATTERN)
   if (exactMatch) {
     const variable = variableMap.get(normalizeVariableName(exactMatch[1]))
-    return variable ? castVariableValue(variable) : value
+    return variable ? variable.value : value
   }
 
   return value.replace(VARIABLE_PATTERN, (match, name: string) => {
     const variable = variableMap.get(normalizeVariableName(name))
-    if (!variable) return match
-    return String(castVariableValue(variable))
+    return variable ? variable.value : match
   })
 }

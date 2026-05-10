@@ -23,7 +23,7 @@ export const ExampleFlowsModal = ({ open, onOpenChange }: Props) => {
       toast.error('Could not load example flow')
       return
     }
-    replaceFlow(snapshot)
+    replaceFlow({ ...snapshot, projectName: example.title })
     onOpenChange(false)
     toast.success(`Loaded "${example.title}"`)
   }

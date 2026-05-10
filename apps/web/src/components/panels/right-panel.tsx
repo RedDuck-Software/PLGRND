@@ -1,8 +1,9 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import {
   SlidersHorizontal,
   Braces,
   PanelRightClose,
+  PanelRightOpen,
   ArrowDownToDot,
   ArrowUpFromDot,
   Trash2,
@@ -11,18 +12,33 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useFlowStore } from '@/stores/flow-store'
+import { resolveFlowVariables } from '@/utils/flow/variables'
 import { getNodeStyles } from '@/utils/node/node-style.utils'
 import { getNodeConfig } from '@/utils/node/node-config-registry'
 import { DynamicIcon, type IconName } from 'lucide-react/dynamic'
 import { useReactFlow } from '@xyflow/react'
 import type { NodeType } from '@/types/node'
-import type { FlowVariable, FlowVariableType } from '@/types/flow-variable'
 import { toast } from 'sonner'
 
 type Tab = 'inspector' | 'variables'
 
-export function RightPanel() {
+export function RightPanel({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => void }) {
   const [tab, setTab] = useState<Tab>('inspector')
+
+  if (collapsed) {
+    return (
+      <aside className="flex w-10 shrink-0 flex-col items-center border-l border-[#1F1F2E] bg-[#0E0E18] pt-3">
+        <button
+          type="button"
+          onClick={onToggle}
+          className="flex h-[26px] w-[26px] items-center justify-center rounded-md border border-[#1F1F2E] bg-[#13131D] hover:bg-[#1F1F2E] transition-colors"
+          title="Expand"
+        >
+          <PanelRightOpen className="h-3.5 w-3.5 text-[#C8C8DC]" />
+        </button>
+      </aside>
+    )
+  }
 
   return (
     <aside className="flex flex-col w-[360px] shrink-0 border-l border-[#1F1F2E] bg-[#0E0E18] overflow-hidden">
@@ -32,6 +48,7 @@ export function RightPanel() {
         <div className="flex w-10 items-center justify-center border-r border-[#1F1F2E]">
           <button
             type="button"
+            onClick={onToggle}
             className="flex h-[26px] w-[26px] items-center justify-center rounded-md border border-[#1F1F2E] bg-[#13131D] hover:bg-[#1F1F2E] transition-colors"
             title="Collapse"
           >
@@ -93,10 +110,19 @@ function Tab({
   )
 }
 
+function getDataFieldFromHandle(handleId: string, nodeId: string): string {
+  const rest = handleId.slice((nodeId + '-').length)
+  return rest.split('-')[0]
+}
+
 function InspectorTab() {
   const nodes = useFlowStore((s) => s.nodes)
+  const edges = useFlowStore((s) => s.edges)
+  const variables = useFlowStore((s) => s.variables)
   const { setNodes, setEdges } = useReactFlow()
   const selected = nodes.find((n) => (n as { selected?: boolean }).selected)
+
+  const nodesById = useMemo(() => Object.fromEntries(nodes.map((n) => [n.id, n])), [nodes])
 
   if (!selected) {
     return (
@@ -241,14 +267,27 @@ function InspectorTab() {
             }
           >
             <div className="flex flex-col gap-1">
-              {inputs.map((h) => (
-                <PortRow
-                  key={h.dataField as string}
-                  name={(h.label || h.dataField) as string}
-                  type={(h as { dataType?: string }).dataType || 'any'}
-                  color={styles.color}
-                />
-              ))}
+              {inputs.map((h) => {
+                const targetHandleId = `${selected.id}-${h.dataField as string}-left`
+                const edge = edges.find((e) => e.targetHandle === targetHandleId)
+                let raw: unknown = selected.data[h.dataField as string]
+                if (edge) {
+                  const srcField = getDataFieldFromHandle(edge.sourceHandle!, edge.source)
+                  const srcNode = nodesById[edge.source]
+                  if (srcNode) raw = srcNode.data[srcField]
+                }
+                const resolved = resolveFlowVariables(raw, variables)
+                return (
+                  <PortRow
+                    key={h.dataField as string}
+                    name={(h.label || h.dataField) as string}
+                    type={(h as { dataType?: string }).dataType || 'any'}
+                    color={styles.color}
+                    raw={raw}
+                    resolved={resolved}
+                  />
+                )
+              })}
             </div>
           </Field>
         )}
@@ -264,14 +303,20 @@ function InspectorTab() {
             }
           >
             <div className="flex flex-col gap-1">
-              {outputs.map((h) => (
-                <PortRow
-                  key={h.dataField as string}
-                  name={(h.label || h.dataField) as string}
-                  type={(h as { dataType?: string }).dataType || 'any'}
-                  color={styles.color}
-                />
-              ))}
+              {outputs.map((h) => {
+                const raw = selected.data[h.dataField as string]
+                const resolved = resolveFlowVariables(raw, variables)
+                return (
+                  <PortRow
+                    key={h.dataField as string}
+                    name={(h.label || h.dataField) as string}
+                    type={(h as { dataType?: string }).dataType || 'any'}
+                    color={styles.color}
+                    raw={raw}
+                    resolved={resolved}
+                  />
+                )
+              })}
             </div>
           </Field>
         )}
@@ -313,32 +358,59 @@ function PositionInput({
   )
 }
 
-function PortRow({ name, type, color }: { name: string; type: string; color: string }) {
+function formatValue(v: unknown): string {
+  if (v === undefined || v === null || v === '') return ''
+  if (typeof v === 'object') return JSON.stringify(v)
+  return String(v)
+}
+
+function PortRow({
+  name,
+  type,
+  color,
+  raw,
+  resolved,
+}: {
+  name: string
+  type: string
+  color: string
+  raw?: unknown
+  resolved?: unknown
+}) {
+  const rawStr = formatValue(raw)
+  const resolvedStr = formatValue(resolved)
+  const isVariable = rawStr.startsWith('$')
+  const displayValue = resolvedStr || rawStr
+
   return (
-    <div className="flex items-center gap-2 rounded-md border border-[#1F1F2E] bg-[#08080F] px-2.5 py-1.5">
-      <span
-        className="h-1.5 w-1.5 shrink-0 rounded-full"
-        style={{ backgroundColor: color }}
-      />
-      <span className="flex-1 truncate text-[11px] font-mono text-[#C8C8DC]">{name}</span>
-      <span
-        className="rounded px-1.5 py-0.5 text-[9px] font-mono font-semibold uppercase tracking-wide"
-        style={{ backgroundColor: `${color}22`, color }}
-      >
-        {type}
-      </span>
+    <div className="flex flex-col gap-1 rounded-md border border-[#1F1F2E] bg-[#08080F] px-2.5 py-1.5">
+      <div className="flex items-center gap-2">
+        <span
+          className="h-1.5 w-1.5 shrink-0 rounded-full"
+          style={{ backgroundColor: color }}
+        />
+        <span className="flex-1 truncate text-[11px] font-mono text-[#C8C8DC]">{name}</span>
+        <span
+          className="rounded px-1.5 py-0.5 text-[9px] font-mono font-semibold uppercase tracking-wide"
+          style={{ backgroundColor: `${color}22`, color }}
+        >
+          {type}
+        </span>
+      </div>
+      {displayValue && (
+        <div className="flex items-center gap-1.5 pl-3.5">
+          {isVariable && (
+            <span className="text-[9px] font-mono text-[#9945FF] shrink-0">{rawStr}</span>
+          )}
+          {isVariable && <span className="text-[9px] text-[#3A3A4D]">→</span>}
+          <span className="break-all text-[10px] font-mono text-[#8B8B9E]">{resolvedStr || rawStr}</span>
+        </div>
+      )}
     </div>
   )
 }
 
-const TYPE_COLOR: Record<FlowVariable['type'], string> = {
-  string: '#FF8A4C',
-  number: '#5B9BFF',
-  publicKey: '#9945FF',
-  boolean: '#FFB849',
-}
-
-const VARIABLE_TYPES = ['string', 'number', 'boolean', 'publicKey'] satisfies FlowVariableType[]
+const VARIABLE_COLOR = '#9945FF'
 
 function VariablesTab() {
   const variables = useFlowStore((s) => s.variables)
@@ -385,7 +457,6 @@ function VariablesTab() {
         )}
 
         {variables.map((variable) => {
-          const color = TYPE_COLOR[variable.type]
           const hasDuplicateName = Boolean(variable.name) && nameCounts[variable.name] > 1
           const isNameEmpty = variable.name.length === 0
 
@@ -394,10 +465,10 @@ function VariablesTab() {
               key={variable.id}
               className="rounded-lg border border-[#1F1F2E] bg-[#13131D] transition-colors p-2.5"
             >
-              <div className="mb-2 flex items-center gap-2">
+              <div className="flex items-center gap-2">
                 <span
                   className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-[12px] font-mono font-bold"
-                  style={{ backgroundColor: `${color}22`, color }}
+                  style={{ backgroundColor: `${VARIABLE_COLOR}22`, color: VARIABLE_COLOR }}
                 >
                   $
                 </span>
@@ -411,6 +482,13 @@ function VariablesTab() {
                       : 'border-[#1F1F2E] focus:border-[#9945FF]'
                   )}
                 />
+                <input
+                  value={variable.value}
+                  onChange={(e) => updateVariable(variable.id, { value: e.target.value })}
+                  placeholder="value"
+                  style={{ '--primary': VARIABLE_COLOR } as React.CSSProperties}
+                  className="h-7 w-24 shrink-0 rounded-md border border-[#1F1F2E] bg-[#08080F] px-2 text-[10px] font-mono text-[#C8C8DC] outline-none transition-colors focus:border-[var(--primary)] placeholder:text-[#6E6E80]"
+                />
                 <button
                   type="button"
                   onClick={() => deleteVariable(variable.id)}
@@ -420,65 +498,10 @@ function VariablesTab() {
                   <Trash2 className="h-3.5 w-3.5" />
                 </button>
               </div>
-
-              <div className="grid grid-cols-[108px_minmax(0,1fr)] gap-1.5">
-                <select
-                  value={variable.type}
-                  onChange={(e) =>
-                    updateVariable(variable.id, { type: e.target.value as FlowVariableType })
-                  }
-                  className="h-7 rounded-md border border-[#1F1F2E] bg-[#08080F] px-2 text-[10px] font-mono text-[#C8C8DC] outline-none focus:border-[#9945FF]"
-                >
-                  {VARIABLE_TYPES.map((type) => (
-                    <option key={type} value={type}>
-                      {type}
-                    </option>
-                  ))}
-                </select>
-                <VariableValueInput
-                  variable={variable}
-                  color={color}
-                  onChange={(value) => updateVariable(variable.id, { value })}
-                />
-              </div>
             </div>
           )
         })}
       </div>
     </div>
-  )
-}
-
-function VariableValueInput({
-  variable,
-  color,
-  onChange,
-}: {
-  variable: FlowVariable
-  color: string
-  onChange: (value: string) => void
-}) {
-  if (variable.type === 'boolean') {
-    return (
-      <select
-        value={variable.value}
-        onChange={(e) => onChange(e.target.value)}
-        className="h-7 rounded-md border border-[#1F1F2E] bg-[#08080F] px-2 text-[10px] font-mono text-[#C8C8DC] outline-none focus:border-[#9945FF]"
-      >
-        <option value="">unset</option>
-        <option value="true">true</option>
-        <option value="false">false</option>
-      </select>
-    )
-  }
-
-  return (
-    <input
-      type={variable.type === 'number' ? 'number' : 'text'}
-      value={variable.value}
-      onChange={(e) => onChange(e.target.value)}
-      style={{ '--primary': color } as React.CSSProperties}
-      className="h-7 min-w-0 rounded-md border border-[#1F1F2E] bg-[#08080F] px-2 text-[10px] font-mono text-[#C8C8DC] outline-none transition-colors focus:border-[var(--primary)]"
-    />
   )
 }
