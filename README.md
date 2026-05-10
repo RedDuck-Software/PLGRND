@@ -67,4 +67,4 @@ yarn web:build
 
 **Solana development is easy! Prove me wrong.**
 
-© 2025 SOL Learn. All rights reserved.
+© 2026 SOL Learn. All rights reserved.

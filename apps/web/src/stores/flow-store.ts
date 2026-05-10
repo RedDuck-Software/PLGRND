@@ -63,7 +63,7 @@ export const sanitizeNodes = (nodes: Node[]): Node[] =>
   }))
 
 const defaultNodes: Node[] = [
-  { id: 'default1', position: { x: 0, y: 0 }, type: NodeTypeEnum.TEXT, data: { text: 'Welcome to SOL Learn!' } },
+  { id: 'default1', position: { x: 0, y: 0 }, type: NodeTypeEnum.TEXT, data: { text: 'Welcome to PLGRND!' } },
   {
     id: 'default2',
     position: { x: 0, y: 70 },
@@ -102,8 +102,7 @@ export const useFlowStore = create<FlowState>()(
       setEdges: (updater) =>
         set((s) => ({ edges: typeof updater === 'function' ? (updater as (e: Edge[]) => Edge[])(s.edges) : updater })),
       setViewport: (viewport) => set({ viewport }),
-      replaceFlow: (snapshot) =>
-        set({ nodes: snapshot.nodes, edges: snapshot.edges, viewport: snapshot.viewport }),
+      replaceFlow: (snapshot) => set({ nodes: snapshot.nodes, edges: snapshot.edges, viewport: snapshot.viewport }),
       resetFlow: () => set({ nodes: defaultNodes, edges: defaultEdges, viewport: undefined }),
     }),
     {
