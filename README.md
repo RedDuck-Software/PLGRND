@@ -1,33 +1,27 @@
-# SOL Learn
+# PLGRND
 
 ## Description
 
-SOL Learn is an interactive educational platform that makes Solana blockchain development accessible through visual programming. Using an intuitive node-based interface, learners can drag-and-drop components to build and understand Solana transactions, programs, and cryptographic operations.
+This playground allows people to program SOLANA FLOWS with drag-n-drop interface
 
-## Links
+Flows can be constructed manually or with the help of the AI-powered assistant
+Flows have instructions: SOLANA (Lamports, Addresses, SendTx, ReadAccountState, etc.) & COMMON (Add, Hash, Sign, If, Else, etc.)
 
-- **GitHub**: [https://github.com/MrJeleika/sol-learn](https://github.com/MrJeleika/sol-learn)
-- **X**: [https://x.com/solana_learn](https://x.com/solana_learn)
-- **Telegram**: [https://t.me/MrJeleika](https://t.me/MrJeleika)
-- **Pitch Deck**: [https://t.me/solana_learn](https://t.me/solana_learn)
+You can import your Program's IDL to interact with it (including deployment)
+Flows act as constructed blocks of ready&mature code (rather than building the code from scratch)
+
+It's a perfect SOLANA GATEWAY!
 
 ## Prerequisites
 
 Before you begin, ensure you have the following installed on your system:
 
-- **Node.js** v18 or higher
-- **Yarn** v1.22 or higher
+- **Node.js** v22 or higher
+- **Yarn** 4+
 
 ## Installation
 
-1. Clone the repository:
-
-```bash
-git clone https://github.com/MrJeleika/sol-learn.git
-cd solana-build
-```
-
-2. Install dependencies:
+1. Install dependencies:
 
 ```bash
 yarn install
@@ -35,15 +29,7 @@ yarn install
 
 ## How to Run
 
-This project is a monorepo containing two applications: **landing** and **web**.
-
 ### Development Mode
-
-To run the **landing page** in development mode:
-
-```bash
-yarn landing:dev
-```
 
 To run the **web application** in development mode:
 
@@ -53,18 +39,10 @@ yarn web:dev
 
 ### Production Build
 
-To build the **landing page** for production:
-
-```bash
-yarn landing:build
-```
-
 To build the **web application** for production:
 
 ```bash
 yarn web:build
 ```
 
-**Solana development is easy! Prove me wrong.**
-
-© 2026 SOL Learn. All rights reserved.
+© 2026 PLGRND. All rights reserved.
