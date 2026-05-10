@@ -36,8 +36,8 @@ export const Header = () => {
   return (
     <header className="flex border-b-2 rounded-b-[20px] relative z-9999 border-border w-full items-center bg-[#141414] px-8 py-4 justify-between text-foreground">
       <div className="flex items-center gap-2">
-        <img src="/logo-light.svg" alt="logo" className="w-10 h-10" />
-        <h1 className="font-mono">SOL LEARN</h1>
+        <img src="/logo-light.png" alt="logo" className="w-10 h-10" />
+        <h1 className="font-mono">PLGRND</h1>
       </div>
       <DesktopMenu onDrop={handleNodeDrop} />
       <MobileMenu onDrop={handleNodeDrop} />
