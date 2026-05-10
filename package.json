@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "license": "MIT",
   "private": true,
+  "packageManager": "yarn@4.13.0",
   "scripts": {
     "landing:dev": "yarn workspace landing dev",
     "landing:build": "yarn workspace landing build",
