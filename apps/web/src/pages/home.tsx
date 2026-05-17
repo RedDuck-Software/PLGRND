@@ -11,6 +11,7 @@ import {
   type Viewport,
   SelectionMode,
 } from '@xyflow/react'
+import { useSearchParams } from 'react-router-dom'
 import { nodeMap } from '@/utils/node/node-map'
 import { useFlowStore } from '@/stores/flow-store'
 import { readFlowFromLocation, clearFlowHash } from '@/utils/flow/share'
@@ -57,6 +58,8 @@ const areHandleTypesCompatible = (srcType?: string | null, tgtType?: string | nu
 }
 
 export default function Home() {
+  const [searchParams] = useSearchParams()
+  const isViewMode = searchParams.get('view') === 'true'
   const nodes = useFlowStore((s) => s.nodes)
   const edges = useFlowStore((s) => s.edges)
   const viewport = useFlowStore((s) => s.viewport)
@@ -168,14 +171,14 @@ export default function Home() {
         isValidConnection={isValidConnection}
         defaultViewport={viewport}
         fitView={!viewport}
-        selectionOnDrag={true}
+        selectionOnDrag={false}
         selectionMode={SelectionMode.Full}
-        panOnDrag={false}
+        panOnDrag={true}
         className="bg-teal-50"
       >
-        <MiniMap />
+        {!isViewMode && <MiniMap />}
         <Controls />
-        <FlowToolbar />
+        {!isViewMode && <FlowToolbar />}
       </ReactFlow>
     </div>
   )
