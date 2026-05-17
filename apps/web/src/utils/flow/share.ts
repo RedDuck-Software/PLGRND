@@ -3,6 +3,28 @@ import type { FlowSnapshot } from '@/stores/flow-store'
 import { FLOW_STORAGE_VERSION, sanitizeNodes } from '@/stores/flow-store'
 
 export const FLOW_HASH_KEY = 'flow'
+const VIEW_PARAM_KEY = 'view'
+
+const parseLocationParams = (): URLSearchParams => {
+  const merged = new URLSearchParams()
+  if (typeof window === 'undefined') return merged
+  const search = new URLSearchParams(window.location.search)
+  for (const [k, v] of search.entries()) merged.set(k, v)
+  const rawHash = window.location.hash.startsWith('#') ? window.location.hash.slice(1) : window.location.hash
+  if (rawHash) {
+    const normalizedHash = rawHash.replace(/\?/g, '&')
+    const hashParams = new URLSearchParams(normalizedHash)
+    for (const [k, v] of hashParams.entries()) {
+      if (k === FLOW_HASH_KEY) continue
+      if (!merged.has(k)) merged.set(k, v)
+    }
+  }
+  return merged
+}
+
+export const isViewModeFromLocation = (): boolean => {
+  return parseLocationParams().get(VIEW_PARAM_KEY) === 'true'
+}
 
 interface SerializedFlow {
   v: number
@@ -66,7 +88,20 @@ export const buildShareUrl = (snapshot: FlowSnapshot): string => {
 export const clearFlowHash = () => {
   if (typeof window === 'undefined') return
   if (!window.location.hash) return
-  const url = new URL(window.location.href)
-  url.hash = ''
-  window.history.replaceState(null, '', url.toString())
+  const rawHash = window.location.hash.startsWith('#') ? window.location.hash.slice(1) : window.location.hash
+  const normalizedHash = rawHash.replace(/\?/g, '&')
+  const hashParams = new URLSearchParams(normalizedHash)
+  if (!hashParams.has(FLOW_HASH_KEY)) return
+  hashParams.delete(FLOW_HASH_KEY)
+  const searchParams = new URLSearchParams(window.location.search)
+  for (const [k, v] of Array.from(hashParams.entries())) {
+    if (!searchParams.has(k)) searchParams.set(k, v)
+    hashParams.delete(k)
+  }
+  const remainingHash = hashParams.toString()
+  const newHash = remainingHash ? `#${remainingHash}` : ''
+  const newSearch = searchParams.toString()
+  const newQuery = newSearch ? `?${newSearch}` : ''
+  const newUrl = `${window.location.pathname}${newQuery}${newHash}`
+  window.history.replaceState(null, '', newUrl)
 }

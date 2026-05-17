@@ -11,10 +11,9 @@ import {
   type Viewport,
   SelectionMode,
 } from '@xyflow/react'
-import { useSearchParams } from 'react-router-dom'
 import { nodeMap } from '@/utils/node/node-map'
 import { useFlowStore } from '@/stores/flow-store'
-import { readFlowFromLocation, clearFlowHash } from '@/utils/flow/share'
+import { readFlowFromLocation, clearFlowHash, isViewModeFromLocation } from '@/utils/flow/share'
 import { FlowToolbar } from '@/components/flow/flow-toolbar'
 
 const textCompatibleTargetTypes = new Set(['text', 'publicKey', 'signature', 'privateKey', 'mint'])
@@ -58,8 +57,7 @@ const areHandleTypesCompatible = (srcType?: string | null, tgtType?: string | nu
 }
 
 export default function Home() {
-  const [searchParams] = useSearchParams()
-  const isViewMode = searchParams.get('view') === 'true'
+  const isViewMode = isViewModeFromLocation()
   const nodes = useFlowStore((s) => s.nodes)
   const edges = useFlowStore((s) => s.edges)
   const viewport = useFlowStore((s) => s.viewport)
