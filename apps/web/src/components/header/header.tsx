@@ -1,15 +1,14 @@
 import { useReactFlow, type XYPosition } from '@xyflow/react'
 import { useCallback } from 'react'
-import { useSearchParams } from 'react-router-dom'
 import { generateNodeId } from '@/utils/crypto/crypto.utils'
+import { isViewModeFromLocation } from '@/utils/flow/share'
 import { DesktopMenu } from './desktop-menu'
 import { MobileMenu } from './mobile-menu'
 import type { NodeType } from '@/types/node'
 
 export const Header = () => {
   const { screenToFlowPosition, setNodes } = useReactFlow()
-  const [searchParams] = useSearchParams()
-  const isViewMode = searchParams.get('view') === 'true'
+  const isViewMode = isViewModeFromLocation()
 
   const handleNodeDrop = useCallback(
     (nodeType: NodeType, screenPosition: XYPosition) => {
