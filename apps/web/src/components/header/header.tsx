@@ -1,5 +1,6 @@
 import { useReactFlow, type XYPosition } from '@xyflow/react'
 import { useCallback } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { generateNodeId } from '@/utils/crypto/crypto.utils'
 import { DesktopMenu } from './desktop-menu'
 import { MobileMenu } from './mobile-menu'
@@ -7,6 +8,8 @@ import type { NodeType } from '@/types/node'
 
 export const Header = () => {
   const { screenToFlowPosition, setNodes } = useReactFlow()
+  const [searchParams] = useSearchParams()
+  const isViewMode = searchParams.get('view') === 'true'
 
   const handleNodeDrop = useCallback(
     (nodeType: NodeType, screenPosition: XYPosition) => {
@@ -39,8 +42,8 @@ export const Header = () => {
         <img src="/logo-light.png" alt="logo" className="w-10 h-10" />
         <h1 className="font-mono">PLGRND</h1>
       </div>
-      <DesktopMenu onDrop={handleNodeDrop} />
-      <MobileMenu onDrop={handleNodeDrop} />
+      {!isViewMode && <DesktopMenu onDrop={handleNodeDrop} />}
+      {!isViewMode && <MobileMenu onDrop={handleNodeDrop} />}
     </header>
   )
 }
