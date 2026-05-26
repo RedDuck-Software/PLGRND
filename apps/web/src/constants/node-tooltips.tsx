@@ -9,6 +9,7 @@ const NODE_TOOLTIP_LINKS: Partial<Record<NodeType, string>> = {
   NETWORK: 'https://docs.solana.com/clusters',
   KEYPAIR: 'https://solana.com/ru/developers/courses/intro-to-solana/intro-to-cryptography',
   PRIVATE_KEY: 'https://solana.com/docs/intro/dev#keypairs',
+  MNEMONIC: 'https://en.bitcoin.it/wiki/Seed_phrase',
   PDA: 'https://docs.solana.com/developing/programming-model/program-derived-addresses',
   BALANCE: 'https://docs.solana.com/lamports-and-sol',
   HASH: 'https://en.wikipedia.org/wiki/Cryptographic_hash_function',
@@ -66,6 +67,22 @@ export const NODE_TOOLTIPS: Partial<Record<NodeType, React.ReactNode>> = {
       <p>This node allows you to sign transactions with a specific wallet/account.</p>
       <p className="text-destructive font-bold mt-2">
         WARNING: Never paste your mainnet private keys into untrusted applications.
+      </p>
+    </>
+  ),
+  MNEMONIC: (
+    <>
+      <p>
+        A <BoldText>mnemonic</BoldText> (seed phrase) is a human-readable list of BIP39 words that encodes a wallet's
+        seed.
+      </p>
+      <p>
+        <BoldText>Generate</BoldText> creates a fresh phrase, or connect a mnemonic to the input. The matching{' '}
+        <BoldText>private key</BoldText> is derived along the standard Solana path{' '}
+        <HighlightedText>m/44'/501'/0'/0'</HighlightedText>.
+      </p>
+      <p className="text-destructive font-bold mt-2">
+        WARNING: Anyone with the seed phrase controls the wallet. Never paste a mainnet phrase into untrusted apps.
       </p>
     </>
   ),

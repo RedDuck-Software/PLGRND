@@ -5,6 +5,7 @@ export enum NodeTypeEnum {
   HASH = 'HASH',
   KEYPAIR = 'KEYPAIR',
   PRIVATE_KEY = 'PRIVATE_KEY',
+  MNEMONIC = 'MNEMONIC',
   SIGN = 'SIGN',
   DISPLAY = 'DISPLAY',
   NUMBER = 'NUMBER',

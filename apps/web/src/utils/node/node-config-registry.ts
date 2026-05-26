@@ -4,6 +4,7 @@ import { textNodeConfig } from './data/input/text-node-data'
 import { hashNodeConfig } from './data/crypto/hash-node-data'
 import { keypairNodeConfig } from './data/crypto/keypair-node-data'
 import { privateKeyNodeConfig } from './data/crypto/private-key-node-data'
+import { mnemonicNodeConfig } from './data/crypto/mnemonic-node-data'
 import { signNodeConfig } from './data/crypto/sign-node-data'
 import { displayNodeConfig } from './data/input/display-node-data'
 import { numberNodeConfig } from './data/input/number-node-config'
@@ -60,6 +61,7 @@ export const nodeConfigRegistry = {
   [NodeTypeEnum.HASH]: hashNodeConfig,
   [NodeTypeEnum.KEYPAIR]: keypairNodeConfig,
   [NodeTypeEnum.PRIVATE_KEY]: privateKeyNodeConfig,
+  [NodeTypeEnum.MNEMONIC]: mnemonicNodeConfig,
   [NodeTypeEnum.SIGN]: signNodeConfig,
   [NodeTypeEnum.DISPLAY]: displayNodeConfig,
   [NodeTypeEnum.NUMBER]: numberNodeConfig,

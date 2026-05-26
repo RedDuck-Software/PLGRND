@@ -101,6 +101,7 @@ export const menuConfig: MenuCategory[] = [
       NodeTypeEnum.VERIFY_SIGNATURE,
       NodeTypeEnum.KEYPAIR,
       NodeTypeEnum.PRIVATE_KEY,
+      NodeTypeEnum.MNEMONIC,
     ],
   },
   {
