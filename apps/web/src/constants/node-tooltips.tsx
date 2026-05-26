@@ -57,6 +57,10 @@ export const NODE_TOOLTIPS: Partial<Record<NodeType, React.ReactNode>> = {
         </li>
       </ul>
       <p>Public key can be derived from the secret key, but not the other way around.</p>
+      <p>
+        Leave the input empty and press <BoldText>Generate</BoldText> for a random keypair, or connect a secret key to
+        the input. The input is auto-detected: a base58 secret key/seed, or a 32-byte hex hash used as a seed.
+      </p>
     </>
   ),
   PRIVATE_KEY: (
