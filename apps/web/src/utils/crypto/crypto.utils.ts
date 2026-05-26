@@ -39,6 +39,38 @@ export const transformKeypair = (keypair: Keypair) => {
   }
 }
 
+const hexToBytes = (hex: string) => {
+  const bytes = new Uint8Array(hex.length / 2)
+  for (let i = 0; i < bytes.length; i++) {
+    bytes[i] = parseInt(hex.slice(i * 2, i * 2 + 2), 16)
+  }
+  return bytes
+}
+
+/**
+ * Resolves a connected secret-key input into a Solana keypair, auto-detecting the format:
+ * - 64 hex chars (e.g. a SHA-256 hash) -> used directly as a 32-byte ed25519 seed
+ * - base58 decoding to 64 bytes        -> a full secret key
+ * - base58 decoding to 32 bytes        -> a seed
+ * Returns null when the value is empty or not a recognized format.
+ */
+export const keypairFromSecretInput = (value: string): Keypair | null => {
+  const input = value.trim()
+  if (!input) return null
+  try {
+    if (/^[0-9a-fA-F]{64}$/.test(input)) {
+      return Keypair.fromSeed(hexToBytes(input))
+    }
+    const decoded = bs58.decode(input)
+    if (decoded.length === 64) return Keypair.fromSecretKey(decoded)
+    if (decoded.length === 32) return Keypair.fromSeed(decoded)
+    return null
+  } catch (error) {
+    console.error('Error resolving keypair from input:', error)
+    return null
+  }
+}
+
 export const generateMnemonic = () => bip39GenerateMnemonic()
 
 // Derives the Solana keypair for a BIP39 mnemonic. Returns null when the phrase is invalid.

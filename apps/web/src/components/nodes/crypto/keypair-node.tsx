@@ -6,8 +6,7 @@ import { useNodeActions } from '@/hooks/flow/use-node-actions'
 import { useTypedNodesData } from '@/hooks/flow/use-typed-nodes-data'
 import type { ActionsFor, NodeTypeEnum, TargetFieldsForEnum } from '@/types/node'
 import { useCallback, useEffect } from 'react'
-import { transformKeypair } from '@/utils/crypto/crypto.utils'
-import bs58 from 'bs58'
+import { keypairFromSecretInput, transformKeypair } from '@/utils/crypto/crypto.utils'
 import type { NodeProps } from '@xyflow/react'
 
 export const KeypairNode = (props: NodeProps<KeypairNodeType>) => {
@@ -17,13 +16,14 @@ export const KeypairNode = (props: NodeProps<KeypairNodeType>) => {
   const inputPrivateKey = ((resolved.privateKey?.value as string | undefined) ?? '').trim()
   const hasInput = Boolean(inputPrivateKey)
 
-  // Derive the keypair from a connected private key whenever it changes.
+  // Derive the keypair from a connected secret key whenever it changes. The input is
+  // auto-detected as a base58 secret key/seed or a 32-byte hex hash (used as a seed).
   useEffect(() => {
     if (!inputPrivateKey) return
-    try {
-      const keypair = Keypair.fromSecretKey(bs58.decode(inputPrivateKey))
+    const keypair = keypairFromSecretInput(inputPrivateKey)
+    if (keypair) {
       updateNodeData<KeypairNodeData>(props.id, transformKeypair(keypair))
-    } catch {
+    } else {
       updateNodeData<KeypairNodeData>(props.id, { privateKey: inputPrivateKey, publicKey: '' })
     }
   }, [inputPrivateKey, updateNodeData, props.id])
