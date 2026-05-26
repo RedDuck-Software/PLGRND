@@ -5,6 +5,14 @@ export const keypairNodeConfig = {
   label: 'KEYPAIR',
   handles: [
     {
+      position: Position.Left,
+      type: 'target',
+      dataField: 'privateKey',
+      label: 'Private Key',
+      dataType: 'privateKey',
+      maxConnections: 1,
+    },
+    {
       position: Position.Right,
       type: 'source',
       dataField: 'privateKey',
