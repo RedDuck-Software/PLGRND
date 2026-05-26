@@ -2,6 +2,7 @@ import { SignNode } from '@/components/nodes/crypto/sign-node'
 import { HashNode } from '@/components/nodes/crypto/hash-node'
 import { KeypairNode } from '@/components/nodes/crypto/keypair-node'
 import { PrivateKeyNode } from '@/components/nodes/crypto/private-key-node'
+import { MnemonicNode } from '@/components/nodes/crypto/mnemonic-node'
 import { TextNode } from '@/components/nodes/input/text-node'
 import { NodeTypeEnum, type NodeType } from '@/types/node'
 import { DisplayNode } from '@/components/nodes/input/display-node'
@@ -47,6 +48,7 @@ export const nodeMap: Record<NodeType, React.ComponentType<any>> = {
   [NodeTypeEnum.HASH]: HashNode,
   [NodeTypeEnum.KEYPAIR]: KeypairNode,
   [NodeTypeEnum.PRIVATE_KEY]: PrivateKeyNode,
+  [NodeTypeEnum.MNEMONIC]: MnemonicNode,
   [NodeTypeEnum.SIGN]: SignNode,
   [NodeTypeEnum.DISPLAY]: DisplayNode,
   [NodeTypeEnum.NUMBER]: NumberNode,

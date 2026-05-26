@@ -1,15 +1,15 @@
 import { Position } from '@xyflow/react'
 import type { NodeConfig } from '@/types/node-config'
 
-export const keypairNodeConfig = {
-  label: 'KEYPAIR',
+export const mnemonicNodeConfig = {
+  label: 'MNEMONIC',
   handles: [
     {
       position: Position.Left,
       type: 'target',
-      dataField: 'privateKey',
-      label: 'Private Key',
-      dataType: 'privateKey',
+      dataField: 'mnemonic',
+      label: 'Mnemonic',
+      dataType: 'text',
       maxConnections: 1,
     },
     {
@@ -22,9 +22,9 @@ export const keypairNodeConfig = {
     {
       position: Position.Right,
       type: 'source',
-      dataField: 'publicKey',
-      label: 'Public key',
-      dataType: 'publicKey',
+      dataField: 'mnemonic',
+      label: 'Mnemonic',
+      dataType: 'text',
     },
   ],
   actions: [{ position: Position.Left, label: 'Generate' }],

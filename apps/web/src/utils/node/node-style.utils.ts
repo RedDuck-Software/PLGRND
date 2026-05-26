@@ -62,6 +62,7 @@ export const nodeStyles: Record<NodeType, NodeStyle> = {
   [NodeTypeEnum.SIGN]: { color: '#265c75', width: 150 },
   [NodeTypeEnum.VERIFY_SIGNATURE]: { color: '#265c75', width: 150 },
   [NodeTypeEnum.PRIVATE_KEY]: { color: '#265c75', width: 300 },
+  [NodeTypeEnum.MNEMONIC]: { color: '#265c75', width: 160 },
 
   [NodeTypeEnum.STRING_COMBINE]: { color: '#7a3f24', width: 240 },
   [NodeTypeEnum.STRING_LENGTH]: { color: '#7a3f24', width: 180 },
